@@ -3,6 +3,7 @@ import csv
 import json
 import math
 import random
+import sys
 from bisect import bisect_right
 from dataclasses import dataclass
 from itertools import product
@@ -48,6 +49,61 @@ class BestFairnessResult:
     max_cardinality_at_best_beta: int
     opt_per_group: list[int]
     selected_intervals: list[tuple[int, int, int]] | None = None
+
+
+@dataclass
+class Block:
+    group: int
+    index: int
+    intervals: list[Interval]
+
+    @property
+    def start(self) -> int:
+        return min(interval.start for interval in self.intervals)
+
+    @property
+    def finish(self) -> int:
+        return max(interval.finish for interval in self.intervals)
+
+    @property
+    def size(self) -> int:
+        return len(self.intervals)
+
+
+class ProgressBar:
+    """Small terminal progress bar without external dependencies."""
+
+    def __init__(self, total: int, label: str, enabled: bool = True, width: int = 30):
+        self.total = total
+        self.label = label
+        self.enabled = enabled and total > 0
+        self.width = width
+        self.current = 0
+
+    def update(self, current: int) -> None:
+        if not self.enabled:
+            return
+
+        self.current = min(current, self.total)
+        ratio = self.current / self.total
+        filled = int(self.width * ratio)
+        bar = "#" * filled + "-" * (self.width - filled)
+        percent = int(ratio * 100)
+        sys.stderr.write(
+            f"\r{self.label}: [{bar}] {self.current}/{self.total} ({percent:3d}%)"
+        )
+        sys.stderr.flush()
+
+    def advance(self) -> None:
+        self.update(self.current + 1)
+
+    def finish(self) -> None:
+        if not self.enabled:
+            return
+        if self.current < self.total:
+            self.update(self.total)
+        sys.stderr.write("\n")
+        sys.stderr.flush()
 
 
 def _as_interval_tuple(interval: Interval | tuple[int, int, int]) -> tuple[int, int, int]:
@@ -608,9 +664,11 @@ def load_intervals_from_manifest(
     finish_col: str = "Finish Time",
     length_col: str | None = None,
     group_col: str = "Group",
+    show_progress: bool = True,
 ) -> list[Interval]:
     intervals: list[Interval] = []
     input_files = collect_input_files_from_manifest(manifest_path)
+    progress = ProgressBar(len(input_files), "Loading files", enabled=show_progress)
 
     print("\nINPUT FILES")
     for input_file in input_files:
@@ -624,6 +682,9 @@ def load_intervals_from_manifest(
         )
         intervals.extend(file_intervals)
         print(f"{input_file}: {len(file_intervals)} intervals")
+        progress.advance()
+
+    progress.finish()
 
     return intervals
 
@@ -653,6 +714,168 @@ def assign_sections(intervals: list[Interval]) -> list[Interval]:
 
 def greedy_for_group(intervals: list[Interval]) -> list[Interval]:
     return run_greedy_algorithm([iv.copy() for iv in intervals])
+
+
+def interval_sort_key(interval: Interval) -> tuple[int, int, int, int]:
+    group = interval.group if interval.group is not None else -1
+    return (interval.finish, interval.start, interval.length, group)
+
+
+def partition_schedule_into_blocks(
+    schedule: list[Interval], group: int, num_blocks: int
+) -> list[Block]:
+    """
+    Partition a group's optimal schedule into consecutive blocks.
+
+    The paper version assumes OPT_g/k is integral and asymptotically large. For
+    real inputs, this uses near-equal block sizes so every selected optimal
+    interval can still participate.
+    """
+    if num_blocks <= 0:
+        raise ValueError("num_blocks must be positive")
+
+    ordered_schedule = sorted([iv.copy() for iv in schedule], key=interval_sort_key)
+    if not ordered_schedule:
+        return []
+
+    base_size, remainder = divmod(len(ordered_schedule), num_blocks)
+    blocks = []
+    cursor = 0
+    for block_index in range(num_blocks):
+        block_size = base_size + (1 if block_index < remainder else 0)
+        if block_size == 0:
+            continue
+        block_intervals = ordered_schedule[cursor : cursor + block_size]
+        blocks.append(Block(group=group, index=block_index + 1, intervals=block_intervals))
+        cursor += block_size
+
+    return blocks
+
+
+def do_blocks_intersect(block1: Block, block2: Block) -> bool:
+    return block1.start < block2.finish and block2.start < block1.finish
+
+
+def select_bpa_blocks(
+    intervals: list[Interval], num_blocks: int | None = None
+) -> list[Block]:
+    """
+    Select the fixed sequence of blocks used by BPA.
+
+    For each group, compute its optimal interval schedule, partition that
+    schedule into blocks, repeatedly take the available block with earliest span
+    finish time, and delete blocks from other active groups whose spans overlap.
+    """
+    groups = sorted({iv.group for iv in intervals if iv.group is not None})
+    if not groups:
+        return []
+
+    block_count = num_blocks if num_blocks is not None else len(groups)
+    if block_count <= 0:
+        raise ValueError("num_blocks must be positive")
+
+    blocks_by_group: dict[int, list[Block]] = {}
+    for group in groups:
+        group_intervals = [iv.copy() for iv in intervals if iv.group == group]
+        optimal_schedule = greedy_for_group(group_intervals)
+        blocks_by_group[group] = partition_schedule_into_blocks(
+            optimal_schedule,
+            group=group,
+            num_blocks=block_count,
+        )
+
+    active_groups = groups[:]
+    selected_blocks: list[Block] = []
+
+    for _ in range(block_count):
+        candidate_blocks = [
+            block
+            for group in active_groups
+            for block in blocks_by_group.get(group, [])
+        ]
+        if not candidate_blocks:
+            break
+
+        chosen_block = min(
+            candidate_blocks,
+            key=lambda block: (block.finish, block.start, block.group, block.index),
+        )
+        selected_blocks.append(chosen_block)
+        active_groups.remove(chosen_block.group)
+
+        for group in active_groups:
+            blocks_by_group[group] = [
+                block
+                for block in blocks_by_group.get(group, [])
+                if not do_blocks_intersect(block, chosen_block)
+            ]
+
+    return selected_blocks
+
+
+def intervals_from_blocks(blocks: list[Block]) -> list[Interval]:
+    selected_intervals = [
+        interval.copy()
+        for block in blocks
+        for interval in block.intervals
+    ]
+    result = sorted(selected_intervals, key=interval_sort_key)
+    for interval in result:
+        interval.accepted = True
+    return result
+
+
+def run_block_partitioning_algorithm(
+    intervals: list[Interval], num_blocks: int | None = None
+) -> list[Interval]:
+    """Return BPA's selected non-overlapping intervals."""
+    selected_blocks = select_bpa_blocks(intervals, num_blocks=num_blocks)
+    return intervals_from_blocks(selected_blocks)
+
+
+def run_bpa_greedy_variant(
+    intervals: list[Interval],
+    alpha: float,
+    base_blocks: int | None = None,
+) -> tuple[list[Interval], list[Block], int]:
+    """
+    BPA variant: use alpha times the base block count, then finish with greedy.
+
+    The first phase selects one block per original group-count step using the
+    BPA rule. The second phase removes every interval intersecting the selected
+    blocks and runs global greedy on the remaining intervals.
+    """
+    if alpha <= 0:
+        raise ValueError("bpa_variant_alpha must be positive")
+
+    groups = sorted({iv.group for iv in intervals if iv.group is not None})
+    if not groups:
+        return [], [], 0
+
+    base_count = base_blocks if base_blocks is not None else len(groups)
+    if base_count <= 0:
+        raise ValueError("base block count must be positive")
+
+    variant_block_count = max(1, math.ceil(alpha * base_count))
+    selected_blocks = select_bpa_blocks(
+        intervals,
+        num_blocks=variant_block_count,
+    )[:base_count]
+    selected_intervals = intervals_from_blocks(selected_blocks)
+    remaining_intervals = [
+        iv.copy()
+        for iv in intervals
+        if can_add_interval(iv, selected_intervals)
+    ]
+    greedy_tail = run_greedy_algorithm(remaining_intervals)
+    result = sorted(
+        selected_intervals + [iv.copy() for iv in greedy_tail],
+        key=interval_sort_key,
+    )
+    for interval in result:
+        interval.accepted = True
+
+    return result, selected_blocks, variant_block_count
 
 
 def build_group_permutation(
@@ -764,9 +987,11 @@ def run_fair_algorithm_multiple_times(
     seed: int = 42,
     alpha: float = 0.0,
     permutation: list[int] | None = None,
+    show_progress: bool = True,
 ) -> dict:
     run_counts = []
     run_totals = []
+    progress = ProgressBar(num_runs, "Running experiments", enabled=show_progress)
 
     for i in range(num_runs):
         selected = select_intervals_mixed(
@@ -778,6 +1003,9 @@ def run_fair_algorithm_multiple_times(
         group_counts = count_by_group(selected)
         run_counts.append(group_counts)
         run_totals.append(sum(group_counts.values()))
+        progress.advance()
+
+    progress.finish()
 
     all_groups = sorted({g for run in run_counts for g in run})
     mean_per_group = {}
@@ -800,7 +1028,12 @@ def run_fair_algorithm_multiple_times(
     }
 
 
-def print_alg_opt_summary(alg_counts: dict[int, int], opt_by_group: dict[int, int]) -> None:
+def print_alg_opt_summary(
+    alg_counts: dict[int, int],
+    opt_by_group: dict[int, int],
+    title: str = "SUMMARY",
+    alg_label: str = "Alg",
+) -> None:
     ratios = {}
     for g in sorted(opt_by_group):
         opt = opt_by_group[g]
@@ -810,15 +1043,48 @@ def print_alg_opt_summary(alg_counts: dict[int, int], opt_by_group: dict[int, in
     ratio_values = list(ratios.values())
     min_ratio = min(ratio_values) if ratio_values else 0.0
 
-    print("\nSUMMARY")
+    print(f"\n{title}")
     print(f"Ratio: {min_ratio:.3f}")
 
     print("\nPER-GROUP")
-    print(f"{'Group':<8}{'Alg':<8}{'Opt':<8}{'Ratio':<8}")
+    print(f"{'Group':<8}{alg_label:<8}{'Opt':<8}{'Ratio':<8}")
     for g in sorted(opt_by_group):
         sel = alg_counts.get(g, 0)
         opt = opt_by_group[g]
         print(f"{g:<8}{sel:<8}{opt:<8}{ratios[g]:<8.3f}")
+
+
+def min_ratio_against_opt(
+    counts: dict[int, int], opt_by_group: dict[int, int]
+) -> float:
+    ratios = [
+        (counts.get(group, 0) / opt) if opt > 0 else 0.0
+        for group, opt in opt_by_group.items()
+    ]
+    return min(ratios) if ratios else 0.0
+
+
+def print_algorithm_comparison(
+    rows: list[tuple[str, float, float, float | None]],
+) -> None:
+    print("\nALGORITHM COMPARISON")
+    print(f"{'Algorithm':<18}{'Selected':<12}{'Ratio':<10}{'Comp/OPT':<10}")
+    for name, selected_total, ratio, competitive_ratio in rows:
+        selected_text = (
+            str(int(selected_total))
+            if float(selected_total).is_integer()
+            else f"{selected_total:.2f}"
+        )
+        comp_text = "-" if competitive_ratio is None else f"{competitive_ratio:.3f}"
+        print(f"{name:<18}{selected_text:<12}{ratio:<10.3f}{comp_text:<10}")
+
+
+def print_bpa_blocks(blocks: list[Block]) -> None:
+    print("\nBPA BLOCKS")
+    print(f"{'Step':<8}{'Group':<8}{'Block':<8}{'Size':<8}{'Span':<16}")
+    for step, block in enumerate(blocks, start=1):
+        span = f"[{block.start}, {block.finish})"
+        print(f"{step:<8}{block.group:<8}{block.index:<8}{block.size:<8}{span:<16}")
 
 
 def compare_online_vs_greedy(num_intervals_to_generate: int = 50) -> None:
@@ -838,29 +1104,114 @@ def compare_online_vs_greedy(num_intervals_to_generate: int = 50) -> None:
     )
 
 
-def demo_fairness() -> None:
+def demo_fairness(
+    show_progress: bool = True,
+    bpa_blocks: int | None = None,
+    bpa_variant_alpha: float | None = None,
+) -> None:
     intervals = generate_random_intervals(num_intervals=120, num_groups=6, seed=42)
     with_sections = assign_sections(intervals)
 
     total_opt, opt_by_group = compute_optimal_per_group(with_sections)
+    resolved_bpa_blocks = bpa_blocks if bpa_blocks is not None else len(opt_by_group)
     selected_once = select_intervals_mixed(with_sections, alpha=0.0, seed=42)
     alg_counts = count_by_group(selected_once)
+    greedy_selected = run_greedy_algorithm([iv.copy() for iv in with_sections])
+    greedy_counts = count_by_group(greedy_selected)
+    global_opt_total = len(greedy_selected)
+    bpa_blocks_selected = select_bpa_blocks(
+        with_sections,
+        num_blocks=bpa_blocks,
+    )
+    bpa_selected = intervals_from_blocks(bpa_blocks_selected)
+    bpa_counts = count_by_group(bpa_selected)
+    bpa_variant_counts = None
+    bpa_variant_total = None
+    bpa_variant_block_count = None
+    if bpa_variant_alpha is not None:
+        bpa_variant_selected, _, bpa_variant_block_count = run_bpa_greedy_variant(
+            with_sections,
+            alpha=bpa_variant_alpha,
+            base_blocks=bpa_blocks,
+        )
+        bpa_variant_counts = count_by_group(bpa_variant_selected)
+        bpa_variant_total = sum(bpa_variant_counts.values())
 
     print("\nFAIRNESS DEMO")
     print(f"Total per-group optimal sum: {total_opt}")
+    print(f"Global optimum total:        {global_opt_total}")
+    print(f"BPA blocks k:                {resolved_bpa_blocks}")
     print(f"Single-run selected total:   {sum(alg_counts.values())}")
     print_alg_opt_summary(alg_counts, opt_by_group)
+    print(f"\nGreedy selected total:       {sum(greedy_counts.values())}")
+    print_alg_opt_summary(
+        greedy_counts,
+        opt_by_group,
+        title="GREEDY SUMMARY",
+        alg_label="Greedy",
+    )
+    print(f"\nBPA selected total:          {sum(bpa_counts.values())}")
+    print_bpa_blocks(bpa_blocks_selected)
+    print_alg_opt_summary(
+        bpa_counts,
+        opt_by_group,
+        title="BPA SUMMARY",
+        alg_label="BPA",
+    )
+    if bpa_variant_counts is not None and bpa_variant_total is not None:
+        print(
+            f"\nBPA variant selected total:  {bpa_variant_total}"
+        )
+        print(f"BPA variant alpha:           {bpa_variant_alpha:.3f}")
+        print(f"BPA variant blocks:          {bpa_variant_block_count}")
+        print_alg_opt_summary(
+            bpa_variant_counts,
+            opt_by_group,
+            title="BPA VARIANT SUMMARY",
+            alg_label="BPA+G",
+        )
 
     multi = run_fair_algorithm_multiple_times(
         with_sections,
         num_runs=100,
         seed=42,
         alpha=0.0,
+        show_progress=show_progress,
     )
     print("\nMULTI-RUN")
     print(f"Runs: {multi['num_runs']}")
     print(f"Average selected per run: {multi['mean_total_selected']:.2f}")
     print(f"Mean selected by group: {multi['mean_per_group']}")
+    comparison_rows = [
+            (
+                "Single-run",
+                sum(alg_counts.values()),
+                min_ratio_against_opt(alg_counts, opt_by_group),
+                sum(alg_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
+            ),
+            (
+                "Greedy",
+                sum(greedy_counts.values()),
+                min_ratio_against_opt(greedy_counts, opt_by_group),
+                sum(greedy_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
+            ),
+            (
+                "BPA",
+                sum(bpa_counts.values()),
+                min_ratio_against_opt(bpa_counts, opt_by_group),
+                sum(bpa_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
+            ),
+    ]
+    if bpa_variant_counts is not None and bpa_variant_total is not None:
+        comparison_rows.append(
+            (
+                "BPA variant",
+                bpa_variant_total,
+                min_ratio_against_opt(bpa_variant_counts, opt_by_group),
+                bpa_variant_total / global_opt_total if global_opt_total > 0 else 0.0,
+            )
+        )
+    print_algorithm_comparison(comparison_rows)
 
 
 def demo_offline_fair_dp() -> None:
@@ -889,6 +1240,9 @@ def run_fairness_with_intervals(
     seed: int,
     alpha: float = 0.0,
     permutation: list[int] | None = None,
+    show_progress: bool = True,
+    bpa_blocks: int | None = None,
+    bpa_variant_alpha: float | None = None,
 ) -> None:
     if not intervals:
         raise ValueError("No valid intervals were loaded from input file")
@@ -896,6 +1250,7 @@ def run_fairness_with_intervals(
         raise ValueError("alpha must be between 0 and 1")
 
     total_opt, opt_by_group = compute_optimal_per_group(intervals)
+    resolved_bpa_blocks = bpa_blocks if bpa_blocks is not None else len(opt_by_group)
     selected_once = select_intervals_mixed(
         intervals,
         alpha=alpha,
@@ -903,13 +1258,62 @@ def run_fairness_with_intervals(
         permutation=permutation,
     )
     alg_counts = count_by_group(selected_once)
+    greedy_selected = run_greedy_algorithm([iv.copy() for iv in intervals])
+    greedy_counts = count_by_group(greedy_selected)
+    global_opt_total = len(greedy_selected)
+    bpa_blocks_selected = select_bpa_blocks(
+        intervals,
+        num_blocks=bpa_blocks,
+    )
+    bpa_selected = intervals_from_blocks(bpa_blocks_selected)
+    bpa_counts = count_by_group(bpa_selected)
+    bpa_variant_counts = None
+    bpa_variant_total = None
+    bpa_variant_block_count = None
+    if bpa_variant_alpha is not None:
+        bpa_variant_selected, _, bpa_variant_block_count = run_bpa_greedy_variant(
+            intervals,
+            alpha=bpa_variant_alpha,
+            base_blocks=bpa_blocks,
+        )
+        bpa_variant_counts = count_by_group(bpa_variant_selected)
+        bpa_variant_total = sum(bpa_variant_counts.values())
 
     print("\nFAIRNESS (EXTERNAL DATA)")
     print(f"Input intervals:             {len(intervals)}")
     print(f"Total per-group optimal sum: {total_opt}")
+    print(f"Global optimum total:        {global_opt_total}")
+    print(f"BPA blocks k:                {resolved_bpa_blocks}")
     print(f"Alpha:                       {alpha:.3f}")
     print(f"Single-run selected total:   {sum(alg_counts.values())}")
     print_alg_opt_summary(alg_counts, opt_by_group)
+    print(f"\nGreedy selected total:       {sum(greedy_counts.values())}")
+    print_alg_opt_summary(
+        greedy_counts,
+        opt_by_group,
+        title="GREEDY SUMMARY",
+        alg_label="Greedy",
+    )
+    print(f"\nBPA selected total:          {sum(bpa_counts.values())}")
+    print_bpa_blocks(bpa_blocks_selected)
+    print_alg_opt_summary(
+        bpa_counts,
+        opt_by_group,
+        title="BPA SUMMARY",
+        alg_label="BPA",
+    )
+    if bpa_variant_counts is not None and bpa_variant_total is not None:
+        print(
+            f"\nBPA variant selected total:  {bpa_variant_total}"
+        )
+        print(f"BPA variant alpha:           {bpa_variant_alpha:.3f}")
+        print(f"BPA variant blocks:          {bpa_variant_block_count}")
+        print_alg_opt_summary(
+            bpa_variant_counts,
+            opt_by_group,
+            title="BPA VARIANT SUMMARY",
+            alg_label="BPA+G",
+        )
 
     multi = run_fair_algorithm_multiple_times(
         intervals,
@@ -917,9 +1321,12 @@ def run_fairness_with_intervals(
         seed=seed,
         alpha=alpha,
         permutation=permutation,
+        show_progress=show_progress,
     )
     competitive_ratio = (
-        multi["mean_total_selected"] / total_opt if total_opt > 0 else 0.0
+        multi["mean_total_selected"] / global_opt_total
+        if global_opt_total > 0
+        else 0.0
     )
     mean_ratio_by_group = {}
     for group, opt in opt_by_group.items():
@@ -932,6 +1339,42 @@ def run_fairness_with_intervals(
     print(f"Competitive ratio: {competitive_ratio:.3f}")
     print(f"Mean selected by group: {multi['mean_per_group']}")
     print(f"Mean ratio by group: {mean_ratio_by_group}")
+    comparison_rows = [
+            (
+                "Single-run",
+                sum(alg_counts.values()),
+                min_ratio_against_opt(alg_counts, opt_by_group),
+                sum(alg_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
+            ),
+            (
+                "Multi-run avg",
+                multi["mean_total_selected"],
+                min(mean_ratio_by_group.values()) if mean_ratio_by_group else 0.0,
+                competitive_ratio,
+            ),
+            (
+                "Greedy",
+                sum(greedy_counts.values()),
+                min_ratio_against_opt(greedy_counts, opt_by_group),
+                sum(greedy_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
+            ),
+            (
+                "BPA",
+                sum(bpa_counts.values()),
+                min_ratio_against_opt(bpa_counts, opt_by_group),
+                sum(bpa_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
+            ),
+    ]
+    if bpa_variant_counts is not None and bpa_variant_total is not None:
+        comparison_rows.append(
+            (
+                "BPA variant",
+                bpa_variant_total,
+                min_ratio_against_opt(bpa_variant_counts, opt_by_group),
+                bpa_variant_total / global_opt_total if global_opt_total > 0 else 0.0,
+            )
+        )
+    print_algorithm_comparison(comparison_rows)
 
 
 def parse_args() -> argparse.Namespace:
@@ -966,9 +1409,26 @@ def parse_args() -> argparse.Namespace:
         help="Optional comma-separated group order, for example: 3,1,2,4",
     )
     parser.add_argument(
+        "--bpa-blocks",
+        type=int,
+        default=None,
+        help="Number of blocks k used by the Block Partitioning Algorithm. Defaults to the number of groups.",
+    )
+    parser.add_argument(
+        "--bpa-variant-alpha",
+        type=float,
+        default=None,
+        help="Run the BPA+greedy variant with ceil(alpha * k) blocks before the greedy tail.",
+    )
+    parser.add_argument(
         "--skip-random-demo",
         action="store_true",
         help="Skip built-in random demo when external input is provided.",
+    )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Hide progress bars while loading files and running repeated experiments.",
     )
     return parser.parse_args()
 
@@ -999,6 +1459,7 @@ if __name__ == "__main__":
                 finish_col=args.finish_col,
                 length_col=args.length_col,
                 group_col=args.group_col,
+                show_progress=not args.no_progress,
             )
         else:
             external_intervals = load_intervals_from_file(
@@ -1015,11 +1476,22 @@ if __name__ == "__main__":
             seed=args.seed,
             alpha=args.alpha,
             permutation=group_permutation,
+            show_progress=not args.no_progress,
+            bpa_blocks=args.bpa_blocks,
+            bpa_variant_alpha=args.bpa_variant_alpha,
         )
         if not args.skip_random_demo:
             compare_online_vs_greedy(num_intervals_to_generate=50)
-            demo_fairness()
+            demo_fairness(
+                show_progress=not args.no_progress,
+                bpa_blocks=args.bpa_blocks,
+                bpa_variant_alpha=args.bpa_variant_alpha,
+            )
     else:
         compare_online_vs_greedy(num_intervals_to_generate=50)
-        demo_fairness()
+        demo_fairness(
+            show_progress=not args.no_progress,
+            bpa_blocks=args.bpa_blocks,
+            bpa_variant_alpha=args.bpa_variant_alpha,
+        )
         demo_offline_fair_dp()
