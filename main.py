@@ -1,5 +1,6 @@
 import argparse
 import csv
+import gzip
 import json
 import math
 import random
@@ -11,12 +12,14 @@ from pathlib import Path
 from statistics import mean
 
 
+# DATA STRUCTURES
+
+
 @dataclass
 class Interval:
     start: int
     length: int
     group: int | None = None
-    section: int | None = None
     accepted: bool = False
 
     @property
@@ -28,7 +31,6 @@ class Interval:
             start=self.start,
             length=self.length,
             group=self.group,
-            section=self.section,
             accepted=self.accepted,
         )
 
@@ -70,6 +72,9 @@ class Block:
         return len(self.intervals)
 
 
+# PROGRESS
+
+
 class ProgressBar:
     """Small terminal progress bar without external dependencies."""
 
@@ -106,8 +111,11 @@ class ProgressBar:
         sys.stderr.flush()
 
 
+# COMMON INTERVAL HELPERS
+
+
 def _as_interval_tuple(interval: Interval | tuple[int, int, int]) -> tuple[int, int, int]:
-    """Return an interval as (start, end, group)."""
+    """Return an interval as (start, end, normalized_group). Used by the DP only."""
     if isinstance(interval, Interval):
         if interval.group is None:
             raise ValueError("All intervals must have a group id")
@@ -122,7 +130,7 @@ def _as_interval_tuple(interval: Interval | tuple[int, int, int]) -> tuple[int, 
 def _normalize_intervals(
     intervals: list[Interval | tuple[int, int, int]], k: int
 ) -> list[tuple[int, int, int]]:
-    """Validate and normalize intervals to the tuple representation used by the DP."""
+    """Validate DP intervals using normalized group ids 0, ..., k - 1."""
     if k < 0:
         raise ValueError("k must be non-negative")
 
@@ -137,16 +145,121 @@ def _normalize_intervals(
     return normalized
 
 
-def compute_group_opts(
+def do_intervals_intersect(interval1: Interval, interval2: Interval) -> bool:
+    # Left-closed, right-open intervals: [a, b) and [b, c) are compatible.
+    return interval1.start < interval2.finish and interval2.start < interval1.finish
+
+
+def can_add_interval(new_interval: Interval, accepted_list: list[Interval]) -> bool:
+    return all(
+        not do_intervals_intersect(new_interval, existing_interval)
+        for existing_interval in accepted_list
+    )
+
+
+def intersects_any_interval(
+    interval: Interval,
+    sorted_nonoverlapping_intervals: list[Interval],
+    starts: list[int],
+) -> bool:
+    if not sorted_nonoverlapping_intervals:
+        return False
+    candidate_index = bisect_right(starts, interval.start) - 1
+    if (
+        candidate_index >= 0
+        and do_intervals_intersect(interval, sorted_nonoverlapping_intervals[candidate_index])
+    ):
+        return True
+    next_index = candidate_index + 1
+    return (
+        next_index < len(sorted_nonoverlapping_intervals)
+        and do_intervals_intersect(interval, sorted_nonoverlapping_intervals[next_index])
+    )
+
+
+def add_if_compatible_with_sorted_schedule(
+    interval: Interval,
+    schedule_by_start: list[Interval],
+    starts: list[int],
+) -> bool:
+    insert_index = bisect_right(starts, interval.start)
+    previous_index = insert_index - 1
+    if (
+        previous_index >= 0
+        and do_intervals_intersect(interval, schedule_by_start[previous_index])
+    ):
+        return False
+    if (
+        insert_index < len(schedule_by_start)
+        and do_intervals_intersect(interval, schedule_by_start[insert_index])
+    ):
+        return False
+
+    schedule_by_start.insert(insert_index, interval)
+    starts.insert(insert_index, interval.start)
+    return True
+
+
+def interval_sort_key(interval: Interval) -> tuple[int, int, int, int]:
+    group = interval.group if interval.group is not None else -1
+    return (interval.finish, interval.start, interval.length, group)
+
+
+def count_by_group(intervals: list[Interval]) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for interval in intervals:
+        if interval.group is not None:
+            counts[interval.group] = counts.get(interval.group, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def get_groups(intervals: list[Interval]) -> list[int]:
+    return sorted({interval.group for interval in intervals if interval.group is not None})
+
+
+def compatible_residual_intervals(
+    intervals: list[Interval],
+    selected_solution: list[Interval],
+) -> list[Interval]:
+    selected_by_start = sorted(
+        [interval.copy() for interval in selected_solution],
+        key=lambda interval: (interval.start, interval.finish, interval.group or -1),
+    )
+    starts = [interval.start for interval in selected_by_start]
+    return [
+        interval.copy()
+        for interval in intervals
+        if not intersects_any_interval(interval, selected_by_start, starts)
+    ]
+
+
+# OFFLINE GREEDY AND OPTIMA
+
+
+def run_offline_greedy(intervals: list[Interval]) -> list[Interval]:
+    """Earliest-finish-time greedy; exact global OPT for unweighted cardinality."""
+    accepted: list[Interval] = []
+    for interval in sorted([iv.copy() for iv in intervals], key=interval_sort_key):
+        if not accepted or accepted[-1].finish <= interval.start:
+            interval.accepted = True
+            accepted.append(interval)
+    return accepted
+
+
+def compute_optimal_per_group(intervals: list[Interval]) -> tuple[int, dict[int, int]]:
+    opt_by_group: dict[int, int] = {}
+    for group in get_groups(intervals):
+        group_intervals = [interval.copy() for interval in intervals if interval.group == group]
+        opt_by_group[group] = len(run_offline_greedy(group_intervals))
+    return sum(opt_by_group.values()), opt_by_group
+
+
+# EXACT FAIRNESS DP, AUXILIARY ONLY
+
+
+def _compute_dp_group_opts(
     intervals: list[Interval | tuple[int, int, int]], k: int
 ) -> list[int]:
-    """
-    Compute OPT_g for every group using classical greedy interval scheduling.
-
-    For cardinality interval scheduling, sorting by end time and taking the next
-    compatible interval is optimal. Compatibility uses left-closed, right-open
-    intervals, so [a, b) and [b, c) are compatible.
-    """
     normalized = _normalize_intervals(intervals, k)
     opt_per_group = [0] * k
 
@@ -167,14 +280,6 @@ def compute_group_opts(
 def sort_intervals_and_compute_p(
     intervals: list[Interval | tuple[int, int, int]],
 ) -> tuple[list[tuple[int, int, int]], list[int]]:
-    """
-    Sort intervals by end time and compute p for each sorted interval.
-
-    The returned p values are DP row numbers, not interval indices: p[i] is the
-    number of intervals ending at or before sorted_intervals[i].start among the
-    intervals before i. This lets a transition for row i + 1 jump directly to
-    DP[p[i]].
-    """
     sorted_intervals = sorted(
         [_as_interval_tuple(interval) for interval in intervals],
         key=lambda interval: (interval[1], interval[0]),
@@ -188,18 +293,8 @@ def sort_intervals_and_compute_p(
 
 
 def generate_quota_vectors(opt_per_group: list[int]):
-    """Yield every integer quota vector a with 0 <= a_g <= OPT_g."""
     ranges = [range(opt + 1) for opt in opt_per_group]
     yield from product(*ranges)
-
-
-def _quota_after_taking(quota: tuple[int, ...], group: int) -> tuple[int, ...]:
-    """Reduce the remaining quota for group by one, truncated at zero."""
-    if quota[group] == 0:
-        return quota
-    updated = list(quota)
-    updated[group] -= 1
-    return tuple(updated)
 
 
 def _run_quota_dp(
@@ -208,17 +303,6 @@ def _run_quota_dp(
     quota_vectors: list[tuple[int, ...]],
     reconstruct_target: tuple[int, ...] | None = None,
 ) -> tuple[list[dict[tuple[int, ...], int]], list[dict[tuple[int, ...], tuple]] | None]:
-    """
-    Dynamic program for max-cardinality schedules under every requested quota.
-
-    DP[i][a] is the maximum number of intervals selectable from the first i
-    end-time-sorted intervals while still satisfying quota vector a. Missing
-    entries represent invalid states, i.e. negative infinity.
-
-    Recurrence for interval i - 1 with group h:
-      skip: DP[i][a] = DP[i - 1][a]
-      take: DP[i][a] = max(DP[i][a], 1 + DP[p[i - 1]][a with h reduced])
-    """
     n = len(sorted_intervals)
     if not quota_vectors:
         raise ValueError("quota_vectors must contain at least one quota vector")
@@ -239,8 +323,6 @@ def _run_quota_dp(
         compatible_row = p[interval_index]
         previous_layer = dp[row - 1]
         compatible_layer = dp[compatible_row]
-        # Start with the skip transition for every reachable state:
-        # DP[i][a] >= DP[i - 1][a].
         current_layer: dict[tuple[int, ...], int] = dict(previous_layer)
         current_parents = parents[row] if parents is not None else None
 
@@ -248,10 +330,6 @@ def _run_quota_dp(
             for quota in previous_layer:
                 current_parents[quota] = ("skip", row - 1, quota)
 
-        # Take transition, written in forward form from DP[p(i)]:
-        # taking an interval from group h can either leave an already-zero
-        # remaining quota unchanged, or increase the satisfied target quota by
-        # one in group h, up to the requested upper bound.
         for reduced_quota, take_base in compatible_layer.items():
             candidate_quotas = [reduced_quota]
             if reduced_quota[group] < upper_bounds[group]:
@@ -303,17 +381,11 @@ def _reconstruct_selected_intervals(
 def fair_dp_with_beta(
     intervals: list[Interval | tuple[int, int, int]], k: int, beta: float
 ) -> FairDPResult:
-    """
-    Solve offline interval scheduling with group-fairness quotas induced by beta.
-
-    The returned schedule has maximum cardinality among all feasible schedules
-    that select at least ceil(beta * OPT_g) intervals from each group g.
-    """
     if not 0.0 <= beta <= 1.0:
         raise ValueError("beta must be in [0, 1]")
 
     normalized = _normalize_intervals(intervals, k)
-    opt_per_group = compute_group_opts(normalized, k)
+    opt_per_group = _compute_dp_group_opts(normalized, k)
     quotas = [math.ceil(beta * opt) for opt in opt_per_group]
     quota_tuple = tuple(quotas)
 
@@ -355,15 +427,8 @@ def _fairness_ratio(quota: tuple[int, ...], opt_per_group: list[int]) -> float:
 def find_best_fairness_by_quota_enumeration(
     intervals: list[Interval | tuple[int, int, int]], k: int
 ) -> BestFairnessResult:
-    """
-    Enumerate all quota vectors and return the feasible one with best fairness.
-
-    The fairness score of quota vector a is min_g a_g / OPT_g, ignoring groups
-    with OPT_g = 0. Ties are broken by larger selected cardinality and then by
-    the lexicographically larger quota vector.
-    """
     normalized = _normalize_intervals(intervals, k)
-    opt_per_group = compute_group_opts(normalized, k)
+    opt_per_group = _compute_dp_group_opts(normalized, k)
     sorted_intervals, p = sort_intervals_and_compute_p(normalized)
     quota_vectors = list(generate_quota_vectors(opt_per_group))
 
@@ -408,54 +473,577 @@ def find_best_fairness_by_quota_enumeration(
     )
 
 
-def do_intervals_intersect(interval1: Interval, interval2: Interval) -> bool:
-    # Left-closed right-open: [start, finish)
-    return interval1.start < interval2.finish and interval2.start < interval1.finish
+# OFFLINE DETERMINISTIC
 
 
-def can_add_interval(new_interval: Interval, accepted_list: list[Interval]) -> bool:
-    for existing_interval in accepted_list:
-        if do_intervals_intersect(new_interval, existing_interval):
-            return False
-    return True
+def partition_schedule_into_blocks(
+    schedule: list[Interval], group: int, r: int
+) -> list[Block]:
+    """
+    Partition a group optimum into r consecutive near-equal blocks.
+
+    Finite workloads may not divide evenly; the first remainder blocks receive
+    one extra interval. Empty blocks are not materialized.
+    """
+    if r <= 0:
+        raise ValueError("r must be positive")
+
+    ordered_schedule = sorted([iv.copy() for iv in schedule], key=interval_sort_key)
+    if not ordered_schedule:
+        return []
+
+    base_size, remainder = divmod(len(ordered_schedule), r)
+    blocks: list[Block] = []
+    cursor = 0
+    for block_index in range(r):
+        block_size = base_size + (1 if block_index < remainder else 0)
+        if block_size == 0:
+            continue
+        block_intervals = ordered_schedule[cursor : cursor + block_size]
+        blocks.append(Block(group=group, index=block_index + 1, intervals=block_intervals))
+        cursor += block_size
+    return blocks
 
 
-def run_online_algorithm(intervals_to_process: list[Interval]) -> list[Interval]:
-    accepted_intervals = []
-    for interval in intervals_to_process:
-        if can_add_interval(interval, accepted_intervals):
-            interval.accepted = True
-            accepted_intervals.append(interval)
-    return accepted_intervals
+def do_blocks_intersect(block1: Block, block2: Block) -> bool:
+    return block1.start < block2.finish and block2.start < block1.finish
 
 
-def run_greedy_algorithm(intervals_to_process: list[Interval]) -> list[Interval]:
-    sorted_intervals = sorted(intervals_to_process, key=lambda iv: iv.finish)
-    accepted_intervals = []
-    for interval in sorted_intervals:
-        if can_add_interval(interval, accepted_intervals):
-            interval.accepted = True
-            accepted_intervals.append(interval)
-    return accepted_intervals
+def select_blocks_by_earliest_finish(
+    intervals: list[Interval],
+    r: int,
+) -> list[Block]:
+    groups = get_groups(intervals)
+    k = len(groups)
+    if r < k:
+        raise ValueError(f"r must be at least k. Got r={r}, k={k}")
+
+    blocks_by_group: dict[int, list[Block]] = {}
+    for group in groups:
+        group_intervals = [iv.copy() for iv in intervals if iv.group == group]
+        group_optimum = run_offline_greedy(group_intervals)
+        blocks_by_group[group] = partition_schedule_into_blocks(
+            group_optimum,
+            group=group,
+            r=r,
+        )
+
+    active_groups = groups[:]
+    selected_blocks: list[Block] = []
+
+    while active_groups and len(selected_blocks) < k:
+        candidate_blocks = [
+            block
+            for group in active_groups
+            for block in blocks_by_group.get(group, [])
+        ]
+        if not candidate_blocks:
+            break
+
+        chosen_block = min(
+            candidate_blocks,
+            key=lambda block: (
+                block.finish,
+                -block.start,
+                block.group,
+                block.index,
+            ),
+        )
+        selected_blocks.append(chosen_block)
+        active_groups.remove(chosen_block.group)
+
+        for group in active_groups:
+            blocks_by_group[group] = [
+                block
+                for block in blocks_by_group.get(group, [])
+                if not do_blocks_intersect(block, chosen_block)
+            ]
+
+    return selected_blocks
 
 
-def generate_random_intervals(
-    num_intervals: int = 50,
-    start_low: int = 0,
-    start_high: int = 100,
-    length_low: int = 1,
-    length_high: int = 20,
-    num_groups: int = 5,
+def intervals_from_blocks(blocks: list[Block]) -> list[Interval]:
+    result = sorted(
+        [interval.copy() for block in blocks for interval in block.intervals],
+        key=interval_sort_key,
+    )
+    for interval in result:
+        interval.accepted = True
+    return result
+
+
+def run_offline_deterministic_r_block(
+    intervals: list[Interval],
+    r: int,
+) -> tuple[list[Interval], list[Block]]:
+    groups = get_groups(intervals)
+    k = len(groups)
+    if r < k:
+        raise ValueError(f"r must be at least k. Got r={r}, k={k}")
+
+    selected_blocks = select_blocks_by_earliest_finish(intervals, r=r)
+    block_solution = intervals_from_blocks(selected_blocks)
+    residual_intervals = compatible_residual_intervals(intervals, block_solution)
+    residual_solution = run_offline_greedy(residual_intervals)
+    result = sorted(block_solution + residual_solution, key=interval_sort_key)
+    return result, selected_blocks
+
+
+# OFFLINE RANDOMIZED
+
+
+def run_offline_randomized_group_greedy(
+    intervals: list[Interval],
     seed: int | None = None,
-) -> list[Interval]:
+) -> tuple[list[Interval], int]:
+    groups = get_groups(intervals)
+    if not groups:
+        return [], -1
+
     rng = random.Random(seed)
-    intervals = []
-    for _ in range(num_intervals):
-        start = rng.randint(start_low, start_high)
-        length = rng.randint(length_low, length_high)
-        group = rng.randint(1, num_groups)
-        intervals.append(Interval(start=start, length=length, group=group))
-    return intervals
+    chosen_group = rng.choice(groups)
+    group_intervals = [
+        interval.copy()
+        for interval in intervals
+        if interval.group == chosen_group
+    ]
+    group_solution = run_offline_greedy(group_intervals)
+    residual_intervals = compatible_residual_intervals(intervals, group_solution)
+    residual_solution = run_offline_greedy(residual_intervals)
+    result = sorted(group_solution + residual_solution, key=interval_sort_key)
+    return result, chosen_group
+
+
+def run_offline_randomized_multiple_times(
+    intervals: list[Interval],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+    runs: int,
+    seed: int,
+    show_progress: bool = True,
+    debug_runs: bool = False,
+) -> dict:
+    run_totals: list[int] = []
+    run_counts: list[dict[int, int]] = []
+    chosen_groups: list[int] = []
+    progress = ProgressBar(runs, "Offline randomized", enabled=show_progress)
+
+    for run_index in range(runs):
+        solution, chosen_group = run_offline_randomized_group_greedy(
+            intervals,
+            seed=seed + run_index,
+        )
+        counts = count_by_group(solution)
+        chosen_groups.append(chosen_group)
+        run_counts.append(counts)
+        run_totals.append(len(solution))
+        if debug_runs:
+            print(
+                f"Offline randomized run {run_index + 1}: "
+                f"group={chosen_group}, selected={len(solution)}"
+            )
+        progress.advance()
+
+    progress.finish()
+    mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
+    expected_total = mean(run_totals) if run_totals else 0.0
+    return {
+        "runs": runs,
+        "expected_total": expected_total,
+        "mean_by_group": mean_by_group,
+        "fairness": ex_ante_fairness(mean_by_group, opt_by_group),
+        "fraction_opt": safe_fraction(expected_total, global_opt),
+        "inverse_ratio": safe_inverse_ratio(global_opt, expected_total),
+        "chosen_groups": chosen_groups,
+    }
+
+
+# ONLINE GREEDY BASELINE
+
+
+def run_simple_online_greedy(intervals: list[Interval]) -> list[Interval]:
+    accepted: list[Interval] = []
+    accepted_by_start: list[Interval] = []
+    starts: list[int] = []
+    for interval in intervals:
+        candidate = interval.copy()
+        if add_if_compatible_with_sorted_schedule(candidate, accepted_by_start, starts):
+            candidate.accepted = True
+            accepted.append(candidate)
+    return accepted
+
+
+# ONLINE RANDOMIZED
+
+
+def compute_length_level(length: int, min_length: int) -> int:
+    """
+    Return zero-based dyadic length level.
+
+    Level j contains lengths satisfying 2^j * L_min <= length, up to the next
+    dyadic boundary. Exact powers of two move into the higher level, e.g.
+    L_min -> 0, 2 L_min -> 1, and 4 L_min -> 2.
+    """
+    if length <= 0:
+        raise ValueError(f"length must be positive, got {length}")
+    if min_length <= 0:
+        raise ValueError(f"min_length must be positive, got {min_length}")
+    if length < min_length:
+        raise ValueError(f"length {length} is below min_length {min_length}")
+
+    level = 0
+    boundary = min_length * 2
+    while boundary <= length:
+        level += 1
+        boundary *= 2
+    return level
+
+
+def compute_num_length_levels(intervals: list[Interval]) -> int:
+    lengths = [interval.length for interval in intervals if interval.length > 0]
+    if not lengths:
+        return 0
+    min_length = min(lengths)
+    max_length = max(lengths)
+    return compute_length_level(max_length, min_length) + 1
+
+
+def run_online_random_group_level(
+    intervals: list[Interval],
+    seed: int | None = None,
+) -> tuple[list[Interval], int, int]:
+    groups = get_groups(intervals)
+    lengths = [interval.length for interval in intervals if interval.length > 0]
+    if not groups or not lengths:
+        return [], -1, -1
+
+    min_length = min(lengths)
+    num_levels = compute_num_length_levels(intervals)
+    rng = random.Random(seed)
+    chosen_group = rng.choice(groups)
+    chosen_level = rng.randrange(num_levels)
+
+    accepted: list[Interval] = []
+    accepted_by_start: list[Interval] = []
+    starts: list[int] = []
+    for interval in intervals:
+        if interval.group != chosen_group:
+            continue
+        if compute_length_level(interval.length, min_length) != chosen_level:
+            continue
+        candidate = interval.copy()
+        if add_if_compatible_with_sorted_schedule(candidate, accepted_by_start, starts):
+            candidate.accepted = True
+            accepted.append(candidate)
+
+    return accepted, chosen_group, chosen_level
+
+
+def run_online_random_group_level_multiple_times(
+    intervals: list[Interval],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+    runs: int,
+    seed: int,
+    show_progress: bool = True,
+    debug_runs: bool = False,
+) -> dict:
+    run_totals: list[int] = []
+    run_counts: list[dict[int, int]] = []
+    chosen_groups: list[int] = []
+    chosen_levels: list[int] = []
+    num_levels = compute_num_length_levels(intervals)
+    progress = ProgressBar(runs, "Online randomized", enabled=show_progress)
+
+    for run_index in range(runs):
+        solution, chosen_group, chosen_level = run_online_random_group_level(
+            intervals,
+            seed=seed + run_index,
+        )
+        counts = count_by_group(solution)
+        chosen_groups.append(chosen_group)
+        chosen_levels.append(chosen_level)
+        run_counts.append(counts)
+        run_totals.append(len(solution))
+        if debug_runs:
+            print(
+                f"Online randomized run {run_index + 1}: "
+                f"group={chosen_group}, level={chosen_level}, selected={len(solution)}"
+            )
+        progress.advance()
+
+    progress.finish()
+    mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
+    expected_total = mean(run_totals) if run_totals else 0.0
+    return {
+        "runs": runs,
+        "num_levels": num_levels,
+        "expected_total": expected_total,
+        "mean_by_group": mean_by_group,
+        "fairness": ex_ante_fairness(mean_by_group, opt_by_group),
+        "fraction_opt": safe_fraction(expected_total, global_opt),
+        "inverse_ratio": safe_inverse_ratio(global_opt, expected_total),
+        "chosen_groups": chosen_groups,
+        "chosen_levels": chosen_levels,
+    }
+
+
+def run_online_random_level_greedy(
+    intervals: list[Interval],
+    seed: int | None = None,
+) -> tuple[list[Interval], int]:
+    lengths = [interval.length for interval in intervals if interval.length > 0]
+    if not lengths:
+        return [], -1
+
+    min_length = min(lengths)
+    num_levels = compute_num_length_levels(intervals)
+    rng = random.Random(seed)
+    chosen_level = rng.randrange(num_levels)
+
+    accepted: list[Interval] = []
+    accepted_by_start: list[Interval] = []
+    starts: list[int] = []
+    for interval in intervals:
+        if compute_length_level(interval.length, min_length) != chosen_level:
+            continue
+        candidate = interval.copy()
+        if add_if_compatible_with_sorted_schedule(candidate, accepted_by_start, starts):
+            candidate.accepted = True
+            accepted.append(candidate)
+
+    return accepted, chosen_level
+
+
+def run_online_random_level_greedy_multiple_times(
+    intervals: list[Interval],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+    runs: int,
+    seed: int,
+    show_progress: bool = True,
+    debug_runs: bool = False,
+) -> dict:
+    run_totals: list[int] = []
+    run_counts: list[dict[int, int]] = []
+    chosen_levels: list[int] = []
+    num_levels = compute_num_length_levels(intervals)
+    progress = ProgressBar(runs, "Online randomized level", enabled=show_progress)
+
+    for run_index in range(runs):
+        solution, chosen_level = run_online_random_level_greedy(
+            intervals,
+            seed=seed + run_index,
+        )
+        counts = count_by_group(solution)
+        chosen_levels.append(chosen_level)
+        run_counts.append(counts)
+        run_totals.append(len(solution))
+        if debug_runs:
+            print(
+                f"Online randomized level run {run_index + 1}: "
+                f"level={chosen_level}, selected={len(solution)}"
+            )
+        progress.advance()
+
+    progress.finish()
+    mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
+    expected_total = mean(run_totals) if run_totals else 0.0
+    return {
+        "runs": runs,
+        "num_levels": num_levels,
+        "expected_total": expected_total,
+        "mean_by_group": mean_by_group,
+        "fairness": ex_ante_fairness(mean_by_group, opt_by_group),
+        "fraction_opt": safe_fraction(expected_total, global_opt),
+        "inverse_ratio": safe_inverse_ratio(global_opt, expected_total),
+        "chosen_levels": chosen_levels,
+    }
+
+
+# METRICS
+
+
+def deterministic_fairness(
+    counts: dict[int, int],
+    opt_by_group: dict[int, int],
+) -> float:
+    ratios = [
+        counts.get(group, 0) / opt
+        for group, opt in opt_by_group.items()
+        if opt > 0
+    ]
+    return min(ratios) if ratios else 1.0
+
+
+def ex_ante_fairness(
+    mean_by_group: dict[int, float],
+    opt_by_group: dict[int, int],
+) -> float:
+    ratios = [
+        mean_by_group.get(group, 0.0) / opt
+        for group, opt in opt_by_group.items()
+        if opt > 0
+    ]
+    return min(ratios) if ratios else 1.0
+
+
+def mean_counts_by_group(
+    run_counts: list[dict[int, int]],
+    groups: object,
+) -> dict[int, float]:
+    ordered_groups = sorted(groups)
+    if not run_counts:
+        return {group: 0.0 for group in ordered_groups}
+    return {
+        group: mean(counts.get(group, 0) for counts in run_counts)
+        for group in ordered_groups
+    }
+
+
+def safe_fraction(value: float, denominator: float) -> float:
+    return value / denominator if denominator > 0 else 0.0
+
+
+def safe_inverse_ratio(reference: float, value: float) -> float:
+    return reference / value if value > 0 else math.inf
+
+
+def delta_k_formula(delta: float, k: int) -> float:
+    denominator = delta + k - 1
+    return (delta * k / denominator) if denominator > 0 else 0.0
+
+
+def format_float(value: float) -> str:
+    return "inf" if math.isinf(value) else f"{value:.3f}"
+
+
+def build_result_row(
+    input_file: Path,
+    k: int,
+    alpha: float | None,
+    r: int | None,
+    algorithm: str,
+    algorithm_type: str,
+    runs: int,
+    selected: float,
+    fairness: float,
+    fraction_opt: float,
+    inverse_ratio: float,
+    num_levels: int | None = None,
+) -> dict:
+    return {
+        "input_file": str(input_file),
+        "k": k,
+        "alpha": alpha,
+        "r": r,
+        "algorithm": algorithm,
+        "algorithm_type": algorithm_type,
+        "runs": runs,
+        "selected": selected,
+        "fairness": fairness,
+        "fraction_opt": fraction_opt,
+        "inverse_ratio": inverse_ratio,
+        "num_levels": num_levels,
+    }
+
+
+def save_results_to_csv(results: list[dict], output_path: str) -> None:
+    if not results:
+        raise ValueError("No experiment results to save")
+
+    fieldnames = list(results[0].keys())
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+
+
+# OUTPUT
+
+
+def print_instance_summary(
+    input_file: Path,
+    intervals: list[Interval],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+) -> None:
+    groups = get_groups(intervals)
+    lengths = [interval.length for interval in intervals if interval.length > 0]
+    min_length = min(lengths) if lengths else 0
+    max_length = max(lengths) if lengths else 0
+    delta = (max_length / min_length) if min_length > 0 else 0.0
+    num_levels = compute_num_length_levels(intervals)
+
+    print("\nINSTANCE INFORMATION")
+    print(f"Input file:            {input_file}")
+    print(f"Intervals:             {len(intervals)}")
+    print(f"Groups (k):            {len(groups)}")
+    print(f"Minimum length:        {min_length}")
+    print(f"Maximum length:        {max_length}")
+    print(f"Delta:                 {delta:.3f}")
+    print(f"Delta-k bound:         {delta_k_formula(delta, len(groups)):.3f}")
+    print(f"Length levels:         {num_levels}")
+    print(f"Global offline OPT:    {global_opt}")
+    print(f"OPT by group:          {opt_by_group}")
+
+
+def print_algorithm_detail(
+    name: str,
+    selected: float,
+    by_group,
+    fairness: float,
+    fraction_label: str,
+    fraction_value: float,
+    ratio_label: str,
+    ratio_value: float,
+) -> None:
+    print(f"\n{name}")
+    print(f"Selected:              {selected:.2f}" if isinstance(selected, float) and not selected.is_integer() else f"Selected:              {int(selected)}")
+    print(f"Selected by group:     {by_group}")
+    print(f"Fairness:              {fairness:.3f}")
+    print(f"{fraction_label}:      {fraction_value:.3f}")
+    print(f"{ratio_label}:         {format_float(ratio_value)}")
+
+
+def print_comparison_table(
+    title: str,
+    rows: list[tuple[str, float, float, float, float]],
+    online: bool = False,
+) -> None:
+    print(f"\n{title}")
+    if online:
+        print(
+            f"{'Algorithm':<24}{'Selected':<12}{'Fairness':<12}"
+            f"{'Fraction Offline OPT':<22}{'Offline OPT / ALG':<18}"
+        )
+    else:
+        print(
+            f"{'Algorithm':<24}{'Selected':<12}{'Fairness':<12}"
+            f"{'Fraction OPT':<16}{'OPT / ALG':<12}"
+        )
+
+    for name, selected, fairness, fraction_opt, inverse_ratio in rows:
+        selected_text = (
+            str(int(selected))
+            if float(selected).is_integer()
+            else f"{selected:.2f}"
+        )
+        print(
+            f"{name:<24}{selected_text:<12}{fairness:<12.3f}"
+            f"{fraction_opt:<16.3f}{format_float(inverse_ratio):<12}"
+        )
+
+
+def print_selected_blocks(blocks: list[Block]) -> None:
+    print("\nSELECTED BLOCKS")
+    print(f"{'Step':<8}{'Group':<8}{'Block':<8}{'Size':<8}{'Span':<20}")
+    for step, block in enumerate(blocks, start=1):
+        span = f"[{block.start}, {block.finish})"
+        print(f"{step:<8}{block.group:<8}{block.index:<8}{block.size:<8}{span:<20}")
+
+
+# INPUT LOADING
 
 
 def _normalize_column_name(value: str) -> str:
@@ -485,7 +1073,7 @@ def load_intervals_from_csv(
     length_col: str | None = None,
     group_col: str = "Group",
 ) -> list[Interval]:
-    intervals = []
+    intervals: list[Interval] = []
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         if reader.fieldnames is None:
@@ -532,7 +1120,7 @@ def load_intervals_from_json(
     if not isinstance(data, list):
         raise ValueError("JSON input must be a list of objects")
 
-    intervals = []
+    intervals: list[Interval] = []
     for row in data:
         if not isinstance(row, dict):
             continue
@@ -564,10 +1152,9 @@ def load_intervals_from_json(
 
 
 def load_intervals_from_swf(path: str) -> list[Interval]:
-    # Standard Workload Format columns:
-    # Submit Time (1), Wait Time (2), Run Time (3), Group ID (12), 0-based indexing in code.
-    intervals = []
-    with open(path, "r", encoding="utf-8") as f:
+    intervals: list[Interval] = []
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith(";"):
@@ -599,7 +1186,10 @@ def load_intervals_from_file(
     length_col: str | None = None,
     group_col: str = "Group",
 ) -> list[Interval]:
+    suffixes = "".join(Path(path).suffixes).lower()
     resolved_format = (file_format or Path(path).suffix.lstrip(".")).lower()
+    if suffixes.endswith(".swf.gz"):
+        resolved_format = "swf"
 
     if resolved_format == "csv":
         return load_intervals_from_csv(path, start_col, finish_col, length_col, group_col)
@@ -614,7 +1204,32 @@ def load_intervals_from_file(
 
 
 def _supported_input_file(path: Path) -> bool:
-    return path.is_file() and path.suffix.lower() in {".csv", ".json", ".swf"}
+    suffixes = "".join(path.suffixes).lower()
+    return path.is_file() and (
+        path.suffix.lower() in {".csv", ".json", ".swf"}
+        or suffixes.endswith(".swf.gz")
+    )
+
+
+def collect_input_files_from_path(path: str) -> list[Path]:
+    input_path = Path(path)
+    if not input_path.exists():
+        raise ValueError(f"Input path does not exist: {input_path}")
+
+    if input_path.is_dir():
+        input_files = [
+            candidate
+            for candidate in sorted(input_path.rglob("*"))
+            if _supported_input_file(candidate)
+        ]
+        if not input_files:
+            raise ValueError(f"No supported input files found under: {input_path}")
+        return input_files
+
+    if _supported_input_file(input_path):
+        return [input_path]
+
+    raise ValueError(f"Input must be a folder or a csv/json/swf file: {input_path}")
 
 
 def collect_input_files_from_manifest(manifest_path: str) -> list[Path]:
@@ -635,755 +1250,299 @@ def collect_input_files_from_manifest(manifest_path: str) -> list[Path]:
             if not entry.is_absolute():
                 entry = (manifest.parent / entry).resolve()
 
-            if entry.is_dir():
-                for candidate in sorted(entry.rglob("*")):
-                    resolved_candidate = candidate.resolve()
-                    if _supported_input_file(resolved_candidate) and resolved_candidate not in seen:
-                        collected.append(resolved_candidate)
-                        seen.add(resolved_candidate)
-                continue
-
-            if _supported_input_file(entry.resolve()) and entry.resolve() not in seen:
-                collected.append(entry.resolve())
-                seen.add(entry.resolve())
-                continue
-
-            raise ValueError(
-                f"Manifest entry must be an existing folder or a csv/json/swf file: {entry}"
-            )
+            for input_file in collect_input_files_from_path(str(entry)):
+                resolved = input_file.resolve()
+                if resolved not in seen:
+                    collected.append(resolved)
+                    seen.add(resolved)
 
     if not collected:
         raise ValueError(f"No supported input files were found in manifest: {manifest}")
-
     return collected
 
 
-def load_intervals_from_manifest(
-    manifest_path: str,
-    start_col: str = "Start Time",
-    finish_col: str = "Finish Time",
-    length_col: str | None = None,
-    group_col: str = "Group",
-    show_progress: bool = True,
-) -> list[Interval]:
-    intervals: list[Interval] = []
-    input_files = collect_input_files_from_manifest(manifest_path)
-    progress = ProgressBar(len(input_files), "Loading files", enabled=show_progress)
-
-    print("\nINPUT FILES")
-    for input_file in input_files:
-        file_intervals = load_intervals_from_file(
-            path=str(input_file),
-            file_format=None,
-            start_col=start_col,
-            finish_col=finish_col,
-            length_col=length_col,
-            group_col=group_col,
-        )
-        intervals.extend(file_intervals)
-        print(f"{input_file}: {len(file_intervals)} intervals")
-        progress.advance()
-
-    progress.finish()
-
-    return intervals
+# EXPERIMENT PIPELINE
 
 
-def assign_sections(intervals: list[Interval]) -> list[Interval]:
-    # Old code's new_assign_sections idea: scan by start, overlap -> same section.
-    sorted_with_idx = sorted(enumerate(intervals), key=lambda x: x[1].start)
-    current_section_end = None
-    current_section_number = 0
-    section_by_index = {}
-
-    for original_index, iv in sorted_with_idx:
-        if current_section_end is not None and iv.start < current_section_end:
-            current_section_end = max(current_section_end, iv.finish)
-        else:
-            current_section_number += 1
-            current_section_end = iv.finish
-        section_by_index[original_index] = current_section_number
-
-    result = []
-    for i, iv in enumerate(intervals):
-        cloned = iv.copy()
-        cloned.section = section_by_index[i]
-        result.append(cloned)
-    return result
-
-
-def greedy_for_group(intervals: list[Interval]) -> list[Interval]:
-    return run_greedy_algorithm([iv.copy() for iv in intervals])
-
-
-def interval_sort_key(interval: Interval) -> tuple[int, int, int, int]:
-    group = interval.group if interval.group is not None else -1
-    return (interval.finish, interval.start, interval.length, group)
-
-
-def partition_schedule_into_blocks(
-    schedule: list[Interval], group: int, num_blocks: int
-) -> list[Block]:
-    """
-    Partition a group's optimal schedule into consecutive blocks.
-
-    The paper version assumes OPT_g/k is integral and asymptotically large. For
-    real inputs, this uses near-equal block sizes so every selected optimal
-    interval can still participate.
-    """
-    if num_blocks <= 0:
-        raise ValueError("num_blocks must be positive")
-
-    ordered_schedule = sorted([iv.copy() for iv in schedule], key=interval_sort_key)
-    if not ordered_schedule:
-        return []
-
-    base_size, remainder = divmod(len(ordered_schedule), num_blocks)
-    blocks = []
-    cursor = 0
-    for block_index in range(num_blocks):
-        block_size = base_size + (1 if block_index < remainder else 0)
-        if block_size == 0:
-            continue
-        block_intervals = ordered_schedule[cursor : cursor + block_size]
-        blocks.append(Block(group=group, index=block_index + 1, intervals=block_intervals))
-        cursor += block_size
-
-    return blocks
-
-
-def do_blocks_intersect(block1: Block, block2: Block) -> bool:
-    return block1.start < block2.finish and block2.start < block1.finish
-
-
-def select_bpa_blocks(
-    intervals: list[Interval], num_blocks: int | None = None
-) -> list[Block]:
-    """
-    Select the fixed sequence of blocks used by BPA.
-
-    For each group, compute its optimal interval schedule, partition that
-    schedule into blocks, repeatedly take the available block with earliest span
-    finish time, and delete blocks from other active groups whose spans overlap.
-    """
-    groups = sorted({iv.group for iv in intervals if iv.group is not None})
-    if not groups:
-        return []
-
-    block_count = num_blocks if num_blocks is not None else len(groups)
-    if block_count <= 0:
-        raise ValueError("num_blocks must be positive")
-
-    blocks_by_group: dict[int, list[Block]] = {}
-    for group in groups:
-        group_intervals = [iv.copy() for iv in intervals if iv.group == group]
-        optimal_schedule = greedy_for_group(group_intervals)
-        blocks_by_group[group] = partition_schedule_into_blocks(
-            optimal_schedule,
-            group=group,
-            num_blocks=block_count,
-        )
-
-    active_groups = groups[:]
-    selected_blocks: list[Block] = []
-
-    for _ in range(block_count):
-        candidate_blocks = [
-            block
-            for group in active_groups
-            for block in blocks_by_group.get(group, [])
-        ]
-        if not candidate_blocks:
-            break
-
-        chosen_block = min(
-            candidate_blocks,
-            key=lambda block: (block.finish, block.start, block.group, block.index),
-        )
-        selected_blocks.append(chosen_block)
-        active_groups.remove(chosen_block.group)
-
-        for group in active_groups:
-            blocks_by_group[group] = [
-                block
-                for block in blocks_by_group.get(group, [])
-                if not do_blocks_intersect(block, chosen_block)
-            ]
-
-    return selected_blocks
-
-
-def intervals_from_blocks(blocks: list[Block]) -> list[Interval]:
-    selected_intervals = [
-        interval.copy()
-        for block in blocks
-        for interval in block.intervals
-    ]
-    result = sorted(selected_intervals, key=interval_sort_key)
-    for interval in result:
-        interval.accepted = True
-    return result
-
-
-def run_block_partitioning_algorithm(
-    intervals: list[Interval], num_blocks: int | None = None
-) -> list[Interval]:
-    """Return BPA's selected non-overlapping intervals."""
-    selected_blocks = select_bpa_blocks(intervals, num_blocks=num_blocks)
-    return intervals_from_blocks(selected_blocks)
-
-
-def run_bpa_greedy_variant(
+def evaluate_workload(
+    input_file: Path,
     intervals: list[Interval],
     alpha: float,
-    base_blocks: int | None = None,
-) -> tuple[list[Interval], list[Block], int]:
-    """
-    BPA variant: use alpha times the base block count, then finish with greedy.
-
-    The first phase selects one block per original group-count step using the
-    BPA rule. The second phase removes every interval intersecting the selected
-    blocks and runs global greedy on the remaining intervals.
-    """
-    if alpha <= 0:
-        raise ValueError("bpa_variant_alpha must be positive")
-
-    groups = sorted({iv.group for iv in intervals if iv.group is not None})
-    if not groups:
-        return [], [], 0
-
-    base_count = base_blocks if base_blocks is not None else len(groups)
-    if base_count <= 0:
-        raise ValueError("base block count must be positive")
-
-    variant_block_count = max(1, math.ceil(alpha * base_count))
-    selected_blocks = select_bpa_blocks(
-        intervals,
-        num_blocks=variant_block_count,
-    )[:base_count]
-    selected_intervals = intervals_from_blocks(selected_blocks)
-    remaining_intervals = [
-        iv.copy()
-        for iv in intervals
-        if can_add_interval(iv, selected_intervals)
-    ]
-    greedy_tail = run_greedy_algorithm(remaining_intervals)
-    result = sorted(
-        selected_intervals + [iv.copy() for iv in greedy_tail],
-        key=interval_sort_key,
-    )
-    for interval in result:
-        interval.accepted = True
-
-    return result, selected_blocks, variant_block_count
-
-
-def build_group_permutation(
-    intervals: list[Interval],
-    permutation: list[int] | None = None,
-    seed: int | None = None,
-) -> list[int]:
-    groups = sorted({iv.group for iv in intervals if iv.group is not None})
-    if not groups:
-        return []
-
-    if permutation is None:
-        rng = random.Random(seed)
-        ordered_groups = groups[:]
-        rng.shuffle(ordered_groups)
-        return ordered_groups
-
-    available_groups = set(groups)
-    seen: set[int] = set()
-    ordered_groups: list[int] = []
-
-    for group in permutation:
-        if group not in available_groups or group in seen:
-            continue
-        ordered_groups.append(group)
-        seen.add(group)
-
-    for group in groups:
-        if group not in seen:
-            ordered_groups.append(group)
-
-    return ordered_groups
-
-
-def merge_without_conflict(
-    selected_intervals: list[Interval], new_intervals: list[Interval]
-) -> list[Interval]:
-    if not selected_intervals:
-        return greedy_for_group(new_intervals)
-    if not new_intervals:
-        return [iv.copy() for iv in selected_intervals]
-
-    result = sorted([iv.copy() for iv in selected_intervals], key=lambda x: x.finish)
-    for candidate in sorted(new_intervals, key=lambda x: x.finish):
-        if can_add_interval(candidate, result):
-            candidate.accepted = True
-            result.append(candidate.copy())
-            result.sort(key=lambda x: x.finish)
-    return result
-
-
-def select_intervals_all_sections(
-    intervals_with_section: list[Interval],
-    seed: int | None = None,
-    permutation: list[int] | None = None,
-) -> list[Interval]:
-    ordered_groups = build_group_permutation(
-        intervals_with_section,
-        permutation=permutation,
-        seed=seed,
-    )
-    selected_intervals: list[Interval] = []
-
-    for group in ordered_groups:
-        chosen_group_data = [
-            iv.copy() for iv in intervals_with_section if iv.group == group
-        ]
-        selected_intervals = merge_without_conflict(
-            selected_intervals,
-            greedy_for_group(chosen_group_data),
-        )
-
-    return selected_intervals
-
-
-def select_intervals_mixed(
-    intervals: list[Interval],
-    alpha: float,
-    seed: int | None = None,
-    permutation: list[int] | None = None,
-) -> list[Interval]:
-    rng = random.Random(seed)
-    if rng.random() < alpha:
-        return run_greedy_algorithm([iv.copy() for iv in intervals])
-    return select_intervals_all_sections(intervals, seed=seed, permutation=permutation)
-
-
-def compute_optimal_per_group(intervals: list[Interval]) -> tuple[int, dict[int, int]]:
-    group_optimal = {}
-    all_groups = sorted({iv.group for iv in intervals if iv.group is not None})
-
-    for group in all_groups:
-        group_intervals = [iv.copy() for iv in intervals if iv.group == group]
-        group_optimal[group] = len(run_greedy_algorithm(group_intervals))
-
-    return sum(group_optimal.values()), group_optimal
-
-
-def count_by_group(intervals: list[Interval]) -> dict[int, int]:
-    counts = {}
-    for iv in intervals:
-        counts[iv.group] = counts.get(iv.group, 0) + 1
-    return dict(sorted(counts.items()))
-
-
-def run_fair_algorithm_multiple_times(
-    intervals_with_section: list[Interval],
-    num_runs: int = 50,
-    seed: int = 42,
-    alpha: float = 0.0,
-    permutation: list[int] | None = None,
-    show_progress: bool = True,
-) -> dict:
-    run_counts = []
-    run_totals = []
-    progress = ProgressBar(num_runs, "Running experiments", enabled=show_progress)
-
-    for i in range(num_runs):
-        selected = select_intervals_mixed(
-            intervals_with_section,
-            alpha=alpha,
-            seed=seed + i,
-            permutation=permutation,
-        )
-        group_counts = count_by_group(selected)
-        run_counts.append(group_counts)
-        run_totals.append(sum(group_counts.values()))
-        progress.advance()
-
-    progress.finish()
-
-    all_groups = sorted({g for run in run_counts for g in run})
-    mean_per_group = {}
-    min_per_group = {}
-    max_per_group = {}
-
-    for g in all_groups:
-        values = [run.get(g, 0) for run in run_counts]
-        mean_per_group[g] = mean(values)
-        min_per_group[g] = min(values)
-        max_per_group[g] = max(values)
-
-    return {
-        "num_runs": num_runs,
-        "run_counts": run_counts,
-        "mean_per_group": mean_per_group,
-        "min_per_group": min_per_group,
-        "max_per_group": max_per_group,
-        "mean_total_selected": mean(run_totals),
-    }
-
-
-def print_alg_opt_summary(
-    alg_counts: dict[int, int],
-    opt_by_group: dict[int, int],
-    title: str = "SUMMARY",
-    alg_label: str = "Alg",
-) -> None:
-    ratios = {}
-    for g in sorted(opt_by_group):
-        opt = opt_by_group[g]
-        sel = alg_counts.get(g, 0)
-        ratios[g] = (sel / opt) if opt > 0 else 0.0
-
-    ratio_values = list(ratios.values())
-    min_ratio = min(ratio_values) if ratio_values else 0.0
-
-    print(f"\n{title}")
-    print(f"Ratio: {min_ratio:.3f}")
-
-    print("\nPER-GROUP")
-    print(f"{'Group':<8}{alg_label:<8}{'Opt':<8}{'Ratio':<8}")
-    for g in sorted(opt_by_group):
-        sel = alg_counts.get(g, 0)
-        opt = opt_by_group[g]
-        print(f"{g:<8}{sel:<8}{opt:<8}{ratios[g]:<8.3f}")
-
-
-def min_ratio_against_opt(
-    counts: dict[int, int], opt_by_group: dict[int, int]
-) -> float:
-    ratios = [
-        (counts.get(group, 0) / opt) if opt > 0 else 0.0
-        for group, opt in opt_by_group.items()
-    ]
-    return min(ratios) if ratios else 0.0
-
-
-def print_algorithm_comparison(
-    rows: list[tuple[str, float, float, float | None]],
-) -> None:
-    print("\nALGORITHM COMPARISON")
-    print(f"{'Algorithm':<18}{'Selected':<12}{'Ratio':<10}{'Comp/OPT':<10}")
-    for name, selected_total, ratio, competitive_ratio in rows:
-        selected_text = (
-            str(int(selected_total))
-            if float(selected_total).is_integer()
-            else f"{selected_total:.2f}"
-        )
-        comp_text = "-" if competitive_ratio is None else f"{competitive_ratio:.3f}"
-        print(f"{name:<18}{selected_text:<12}{ratio:<10.3f}{comp_text:<10}")
-
-
-def print_bpa_blocks(blocks: list[Block]) -> None:
-    print("\nBPA BLOCKS")
-    print(f"{'Step':<8}{'Group':<8}{'Block':<8}{'Size':<8}{'Span':<16}")
-    for step, block in enumerate(blocks, start=1):
-        span = f"[{block.start}, {block.finish})"
-        print(f"{step:<8}{block.group:<8}{block.index:<8}{block.size:<8}{span:<16}")
-
-
-def compare_online_vs_greedy(num_intervals_to_generate: int = 50) -> None:
-    base = generate_random_intervals(num_intervals=num_intervals_to_generate, seed=7)
-    online_accepted = run_online_algorithm([iv.copy() for iv in base])
-    greedy_accepted = run_greedy_algorithm([iv.copy() for iv in base])
-
-    online_total_length = sum(iv.length for iv in online_accepted)
-    greedy_total_length = sum(iv.length for iv in greedy_accepted)
-
-    print("\nONLINE vs GREEDY")
-    print(
-        f"Online: {len(online_accepted)} intervals, total length {online_total_length}"
-    )
-    print(
-        f"Greedy: {len(greedy_accepted)} intervals, total length {greedy_total_length}"
-    )
-
-
-def demo_fairness(
-    show_progress: bool = True,
-    bpa_blocks: int | None = None,
-    bpa_variant_alpha: float | None = None,
-) -> None:
-    intervals = generate_random_intervals(num_intervals=120, num_groups=6, seed=42)
-    with_sections = assign_sections(intervals)
-
-    total_opt, opt_by_group = compute_optimal_per_group(with_sections)
-    resolved_bpa_blocks = bpa_blocks if bpa_blocks is not None else len(opt_by_group)
-    selected_once = select_intervals_mixed(with_sections, alpha=0.0, seed=42)
-    alg_counts = count_by_group(selected_once)
-    greedy_selected = run_greedy_algorithm([iv.copy() for iv in with_sections])
-    greedy_counts = count_by_group(greedy_selected)
-    global_opt_total = len(greedy_selected)
-    bpa_blocks_selected = select_bpa_blocks(
-        with_sections,
-        num_blocks=bpa_blocks,
-    )
-    bpa_selected = intervals_from_blocks(bpa_blocks_selected)
-    bpa_counts = count_by_group(bpa_selected)
-    bpa_variant_counts = None
-    bpa_variant_total = None
-    bpa_variant_block_count = None
-    if bpa_variant_alpha is not None:
-        bpa_variant_selected, _, bpa_variant_block_count = run_bpa_greedy_variant(
-            with_sections,
-            alpha=bpa_variant_alpha,
-            base_blocks=bpa_blocks,
-        )
-        bpa_variant_counts = count_by_group(bpa_variant_selected)
-        bpa_variant_total = sum(bpa_variant_counts.values())
-
-    print("\nFAIRNESS DEMO")
-    print(f"Total per-group optimal sum: {total_opt}")
-    print(f"Global optimum total:        {global_opt_total}")
-    print(f"BPA blocks k:                {resolved_bpa_blocks}")
-    print(f"Single-run selected total:   {sum(alg_counts.values())}")
-    print_alg_opt_summary(alg_counts, opt_by_group)
-    print(f"\nGreedy selected total:       {sum(greedy_counts.values())}")
-    print_alg_opt_summary(
-        greedy_counts,
-        opt_by_group,
-        title="GREEDY SUMMARY",
-        alg_label="Greedy",
-    )
-    print(f"\nBPA selected total:          {sum(bpa_counts.values())}")
-    print_bpa_blocks(bpa_blocks_selected)
-    print_alg_opt_summary(
-        bpa_counts,
-        opt_by_group,
-        title="BPA SUMMARY",
-        alg_label="BPA",
-    )
-    if bpa_variant_counts is not None and bpa_variant_total is not None:
-        print(
-            f"\nBPA variant selected total:  {bpa_variant_total}"
-        )
-        print(f"BPA variant alpha:           {bpa_variant_alpha:.3f}")
-        print(f"BPA variant blocks:          {bpa_variant_block_count}")
-        print_alg_opt_summary(
-            bpa_variant_counts,
-            opt_by_group,
-            title="BPA VARIANT SUMMARY",
-            alg_label="BPA+G",
-        )
-
-    multi = run_fair_algorithm_multiple_times(
-        with_sections,
-        num_runs=100,
-        seed=42,
-        alpha=0.0,
-        show_progress=show_progress,
-    )
-    print("\nMULTI-RUN")
-    print(f"Runs: {multi['num_runs']}")
-    print(f"Average selected per run: {multi['mean_total_selected']:.2f}")
-    print(f"Mean selected by group: {multi['mean_per_group']}")
-    comparison_rows = [
-            (
-                "Single-run",
-                sum(alg_counts.values()),
-                min_ratio_against_opt(alg_counts, opt_by_group),
-                sum(alg_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
-            ),
-            (
-                "Greedy",
-                sum(greedy_counts.values()),
-                min_ratio_against_opt(greedy_counts, opt_by_group),
-                sum(greedy_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
-            ),
-            (
-                "BPA",
-                sum(bpa_counts.values()),
-                min_ratio_against_opt(bpa_counts, opt_by_group),
-                sum(bpa_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
-            ),
-    ]
-    if bpa_variant_counts is not None and bpa_variant_total is not None:
-        comparison_rows.append(
-            (
-                "BPA variant",
-                bpa_variant_total,
-                min_ratio_against_opt(bpa_variant_counts, opt_by_group),
-                bpa_variant_total / global_opt_total if global_opt_total > 0 else 0.0,
-            )
-        )
-    print_algorithm_comparison(comparison_rows)
-
-
-def demo_offline_fair_dp() -> None:
-    """Small example showing how to call the offline fairness DP functions."""
-    intervals = [
-        (0, 3, 0),
-        (3, 5, 0),
-        (1, 4, 1),
-        (4, 7, 1),
-        (5, 8, 0),
-        (7, 9, 1),
-    ]
-    k = 2
-
-    beta_result = fair_dp_with_beta(intervals, k, beta=0.3)
-    best_result = find_best_fairness_by_quota_enumeration(intervals, k)
-
-    print("\nOFFLINE FAIR DP DEMO")
-    print(f"Beta result: {beta_result}")
-    print(f"Best fairness by quota enumeration: {best_result}")
-
-
-def run_fairness_with_intervals(
-    intervals: list[Interval],
-    num_runs: int,
+    runs: int,
     seed: int,
-    alpha: float = 0.0,
-    permutation: list[int] | None = None,
     show_progress: bool = True,
-    bpa_blocks: int | None = None,
-    bpa_variant_alpha: float | None = None,
-) -> None:
+    debug_runs: bool = False,
+    debug_blocks: bool = False,
+) -> list[dict]:
+    results: list[dict] = []
+
     if not intervals:
-        raise ValueError("No valid intervals were loaded from input file")
-    if not 0.0 <= alpha <= 1.0:
-        raise ValueError("alpha must be between 0 and 1")
+        raise ValueError(f"No valid intervals were loaded from input file: {input_file}")
 
-    total_opt, opt_by_group = compute_optimal_per_group(intervals)
-    resolved_bpa_blocks = bpa_blocks if bpa_blocks is not None else len(opt_by_group)
-    selected_once = select_intervals_mixed(
+    groups = get_groups(intervals)
+    k = len(groups)
+    if alpha <= 0:
+        raise ValueError(f"alpha must be positive. Got alpha={alpha}")
+    resolved_r = math.ceil(alpha * k)
+    if resolved_r < k:
+        raise ValueError(
+            f"Input file {input_file} has k={k}, alpha={alpha}, "
+            f"and r=ceil(alpha*k)={resolved_r}. Require r >= k, so use alpha >= 1."
+        )
+
+    global_opt_solution = run_offline_greedy(intervals)
+    global_opt = len(global_opt_solution)
+    _, opt_by_group = compute_optimal_per_group(intervals)
+
+    print("\n" + "=" * 80)
+    print_instance_summary(input_file, intervals, opt_by_group, global_opt)
+
+    print("\n==================================================")
+    print("OFFLINE ALGORITHMS")
+    print("==================================================")
+
+    offline_greedy_counts = count_by_group(global_opt_solution)
+    offline_greedy_fairness = deterministic_fairness(offline_greedy_counts, opt_by_group)
+    offline_greedy_fraction = 1.0 if global_opt > 0 else 0.0
+    offline_greedy_ratio = 1.0 if global_opt > 0 else math.inf
+    print_algorithm_detail(
+        "Offline Greedy / Global OPT",
+        len(global_opt_solution),
+        offline_greedy_counts,
+        offline_greedy_fairness,
+        "Fraction of global OPT",
+        offline_greedy_fraction,
+        "OPT / ALG",
+        offline_greedy_ratio,
+    )
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=None,
+            r=None,
+            algorithm="offline_greedy",
+            algorithm_type="deterministic",
+            runs=1,
+            selected=len(global_opt_solution),
+            fairness=offline_greedy_fairness,
+            fraction_opt=offline_greedy_fraction,
+            inverse_ratio=offline_greedy_ratio,
+            num_levels=None,
+        )
+    )
+
+    deterministic_solution, selected_blocks = run_offline_deterministic_r_block(
         intervals,
-        alpha=alpha,
+        r=resolved_r,
+    )
+    deterministic_counts = count_by_group(deterministic_solution)
+    deterministic_fair = deterministic_fairness(deterministic_counts, opt_by_group)
+    deterministic_fraction = safe_fraction(len(deterministic_solution), global_opt)
+    deterministic_ratio = safe_inverse_ratio(global_opt, len(deterministic_solution))
+    lengths = [interval.length for interval in intervals if interval.length > 0]
+    min_length = min(lengths) if lengths else 0
+    max_length = max(lengths) if lengths else 0
+    delta = (max_length / min_length) if min_length > 0 else 0.0
+    delta_k_bound = delta_k_formula(delta, k)
+    print("\nOffline Deterministic")
+    print(f"k:                     {k}")
+    print(f"alpha:                 {alpha:.3f}")
+    print(f"r:                     {resolved_r}")
+    print(f"Delta-k bound:         {delta_k_bound:.3f}")
+    print(f"Selected:              {len(deterministic_solution)}")
+    print(f"Selected by group:     {deterministic_counts}")
+    print(f"Fairness:              {deterministic_fair:.3f}")
+    print(f"Fraction of global OPT:{deterministic_fraction: .3f}")
+    print(f"Observed OPT / ALG ratio: {format_float(deterministic_ratio)}")
+    if debug_blocks:
+        print_selected_blocks(selected_blocks)
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=alpha,
+            r=resolved_r,
+            algorithm="offline_deterministic",
+            algorithm_type="deterministic",
+            runs=1,
+            selected=len(deterministic_solution),
+            fairness=deterministic_fair,
+            fraction_opt=deterministic_fraction,
+            inverse_ratio=deterministic_ratio,
+            num_levels=None,
+        )
+    )
+
+    offline_randomized = run_offline_randomized_multiple_times(
+        intervals,
+        opt_by_group=opt_by_group,
+        global_opt=global_opt,
+        runs=runs,
         seed=seed,
-        permutation=permutation,
-    )
-    alg_counts = count_by_group(selected_once)
-    greedy_selected = run_greedy_algorithm([iv.copy() for iv in intervals])
-    greedy_counts = count_by_group(greedy_selected)
-    global_opt_total = len(greedy_selected)
-    bpa_blocks_selected = select_bpa_blocks(
-        intervals,
-        num_blocks=bpa_blocks,
-    )
-    bpa_selected = intervals_from_blocks(bpa_blocks_selected)
-    bpa_counts = count_by_group(bpa_selected)
-    bpa_variant_counts = None
-    bpa_variant_total = None
-    bpa_variant_block_count = None
-    if bpa_variant_alpha is not None:
-        bpa_variant_selected, _, bpa_variant_block_count = run_bpa_greedy_variant(
-            intervals,
-            alpha=bpa_variant_alpha,
-            base_blocks=bpa_blocks,
-        )
-        bpa_variant_counts = count_by_group(bpa_variant_selected)
-        bpa_variant_total = sum(bpa_variant_counts.values())
-
-    print("\nFAIRNESS (EXTERNAL DATA)")
-    print(f"Input intervals:             {len(intervals)}")
-    print(f"Total per-group optimal sum: {total_opt}")
-    print(f"Global optimum total:        {global_opt_total}")
-    print(f"BPA blocks k:                {resolved_bpa_blocks}")
-    print(f"Alpha:                       {alpha:.3f}")
-    print(f"Single-run selected total:   {sum(alg_counts.values())}")
-    print_alg_opt_summary(alg_counts, opt_by_group)
-    print(f"\nGreedy selected total:       {sum(greedy_counts.values())}")
-    print_alg_opt_summary(
-        greedy_counts,
-        opt_by_group,
-        title="GREEDY SUMMARY",
-        alg_label="Greedy",
-    )
-    print(f"\nBPA selected total:          {sum(bpa_counts.values())}")
-    print_bpa_blocks(bpa_blocks_selected)
-    print_alg_opt_summary(
-        bpa_counts,
-        opt_by_group,
-        title="BPA SUMMARY",
-        alg_label="BPA",
-    )
-    if bpa_variant_counts is not None and bpa_variant_total is not None:
-        print(
-            f"\nBPA variant selected total:  {bpa_variant_total}"
-        )
-        print(f"BPA variant alpha:           {bpa_variant_alpha:.3f}")
-        print(f"BPA variant blocks:          {bpa_variant_block_count}")
-        print_alg_opt_summary(
-            bpa_variant_counts,
-            opt_by_group,
-            title="BPA VARIANT SUMMARY",
-            alg_label="BPA+G",
-        )
-
-    multi = run_fair_algorithm_multiple_times(
-        intervals,
-        num_runs=num_runs,
-        seed=seed,
-        alpha=alpha,
-        permutation=permutation,
         show_progress=show_progress,
+        debug_runs=debug_runs,
     )
-    competitive_ratio = (
-        multi["mean_total_selected"] / global_opt_total
-        if global_opt_total > 0
-        else 0.0
-    )
-    mean_ratio_by_group = {}
-    for group, opt in opt_by_group.items():
-        mean_selected = multi["mean_per_group"].get(group, 0.0)
-        mean_ratio_by_group[group] = (mean_selected / opt) if opt > 0 else 0.0
-
-    print("\nMULTI-RUN")
-    print(f"Runs: {multi['num_runs']}")
-    print(f"Average selected per run: {multi['mean_total_selected']:.2f}")
-    print(f"Competitive ratio: {competitive_ratio:.3f}")
-    print(f"Mean selected by group: {multi['mean_per_group']}")
-    print(f"Mean ratio by group: {mean_ratio_by_group}")
-    comparison_rows = [
-            (
-                "Single-run",
-                sum(alg_counts.values()),
-                min_ratio_against_opt(alg_counts, opt_by_group),
-                sum(alg_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
-            ),
-            (
-                "Multi-run avg",
-                multi["mean_total_selected"],
-                min(mean_ratio_by_group.values()) if mean_ratio_by_group else 0.0,
-                competitive_ratio,
-            ),
-            (
-                "Greedy",
-                sum(greedy_counts.values()),
-                min_ratio_against_opt(greedy_counts, opt_by_group),
-                sum(greedy_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
-            ),
-            (
-                "BPA",
-                sum(bpa_counts.values()),
-                min_ratio_against_opt(bpa_counts, opt_by_group),
-                sum(bpa_counts.values()) / global_opt_total if global_opt_total > 0 else 0.0,
-            ),
-    ]
-    if bpa_variant_counts is not None and bpa_variant_total is not None:
-        comparison_rows.append(
-            (
-                "BPA variant",
-                bpa_variant_total,
-                min_ratio_against_opt(bpa_variant_counts, opt_by_group),
-                bpa_variant_total / global_opt_total if global_opt_total > 0 else 0.0,
-            )
+    print("\nOffline Randomized")
+    print(f"Runs:                  {offline_randomized['runs']}")
+    print(f"Expected selected:     {offline_randomized['expected_total']:.2f}")
+    print(f"Mean selected by group:{offline_randomized['mean_by_group']}")
+    print(f"Estimated ex-ante fairness: {offline_randomized['fairness']:.3f}")
+    print(f"Fraction of global OPT:{offline_randomized['fraction_opt']: .3f}")
+    print(f"Observed OPT / ALG ratio: {format_float(offline_randomized['inverse_ratio'])}")
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=None,
+            r=None,
+            algorithm="offline_randomized",
+            algorithm_type="randomized",
+            runs=offline_randomized["runs"],
+            selected=offline_randomized["expected_total"],
+            fairness=offline_randomized["fairness"],
+            fraction_opt=offline_randomized["fraction_opt"],
+            inverse_ratio=offline_randomized["inverse_ratio"],
+            num_levels=None,
         )
-    print_algorithm_comparison(comparison_rows)
+    )
+
+    print_comparison_table(
+        "OFFLINE COMPARISON",
+        [
+            ("Offline Greedy", len(global_opt_solution), offline_greedy_fairness, 1.0 if global_opt > 0 else 0.0, 1.0 if global_opt > 0 else math.inf),
+            ("Offline Deterministic", len(deterministic_solution), deterministic_fair, deterministic_fraction, deterministic_ratio),
+            ("Offline Randomized", offline_randomized["expected_total"], offline_randomized["fairness"], offline_randomized["fraction_opt"], offline_randomized["inverse_ratio"]),
+        ],
+    )
+
+    print("\n==================================================")
+    print("ONLINE ALGORITHMS")
+    print("==================================================")
+
+    simple_online_solution = run_simple_online_greedy(intervals)
+    simple_online_counts = count_by_group(simple_online_solution)
+    simple_online_fair = deterministic_fairness(simple_online_counts, opt_by_group)
+    simple_online_fraction = safe_fraction(len(simple_online_solution), global_opt)
+    simple_online_ratio = safe_inverse_ratio(global_opt, len(simple_online_solution))
+    print_algorithm_detail(
+        "Simple Online Greedy",
+        len(simple_online_solution),
+        simple_online_counts,
+        simple_online_fair,
+        "Fraction of global offline OPT",
+        simple_online_fraction,
+        "Observed online OPT / ALG ratio",
+        simple_online_ratio,
+    )
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=None,
+            r=None,
+            algorithm="simple_online_greedy",
+            algorithm_type="deterministic",
+            runs=1,
+            selected=len(simple_online_solution),
+            fairness=simple_online_fair,
+            fraction_opt=simple_online_fraction,
+            inverse_ratio=simple_online_ratio,
+            num_levels=None,
+        )
+    )
+
+    online_randomized = run_online_random_group_level_multiple_times(
+        intervals,
+        opt_by_group=opt_by_group,
+        global_opt=global_opt,
+        runs=runs,
+        seed=seed,
+        show_progress=show_progress,
+        debug_runs=debug_runs,
+    )
+    print("\nOnline Randomized")
+    print(f"Runs:                  {online_randomized['runs']}")
+    print(f"Length levels:         {online_randomized['num_levels']}")
+    print(f"Expected selected:     {online_randomized['expected_total']:.2f}")
+    print(f"Mean selected by group:{online_randomized['mean_by_group']}")
+    print(f"Estimated ex-ante fairness: {online_randomized['fairness']:.3f}")
+    print(f"Fraction of global offline OPT:{online_randomized['fraction_opt']: .3f}")
+    print(f"Observed offline OPT / ALG ratio: {format_float(online_randomized['inverse_ratio'])}")
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=None,
+            r=None,
+            algorithm="online_randomized",
+            algorithm_type="randomized",
+            runs=online_randomized["runs"],
+            selected=online_randomized["expected_total"],
+            fairness=online_randomized["fairness"],
+            fraction_opt=online_randomized["fraction_opt"],
+            inverse_ratio=online_randomized["inverse_ratio"],
+            num_levels=online_randomized["num_levels"],
+        )
+    )
+
+    online_randomized_level = run_online_random_level_greedy_multiple_times(
+        intervals,
+        opt_by_group=opt_by_group,
+        global_opt=global_opt,
+        runs=runs,
+        seed=seed,
+        show_progress=show_progress,
+        debug_runs=debug_runs,
+    )
+    print("\nOnline Randomized Level Greedy")
+    print(f"Runs:                  {online_randomized_level['runs']}")
+    print(f"Length levels:         {online_randomized_level['num_levels']}")
+    print(f"Expected selected:     {online_randomized_level['expected_total']:.2f}")
+    print(f"Mean selected by group:{online_randomized_level['mean_by_group']}")
+    print(f"Estimated ex-ante fairness: {online_randomized_level['fairness']:.3f}")
+    print(f"Fraction of global offline OPT:{online_randomized_level['fraction_opt']: .3f}")
+    print(f"Observed offline OPT / ALG ratio: {format_float(online_randomized_level['inverse_ratio'])}")
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=None,
+            r=None,
+            algorithm="online_randomized_level_greedy",
+            algorithm_type="randomized",
+            runs=online_randomized_level["runs"],
+            selected=online_randomized_level["expected_total"],
+            fairness=online_randomized_level["fairness"],
+            fraction_opt=online_randomized_level["fraction_opt"],
+            inverse_ratio=online_randomized_level["inverse_ratio"],
+            num_levels=online_randomized_level["num_levels"],
+        )
+    )
+
+    print_comparison_table(
+        "ONLINE COMPARISON",
+        [
+            ("Simple Online Greedy", len(simple_online_solution), simple_online_fair, simple_online_fraction, simple_online_ratio),
+            ("Online Randomized", online_randomized["expected_total"], online_randomized["fairness"], online_randomized["fraction_opt"], online_randomized["inverse_ratio"]),
+            ("Online Randomized Level", online_randomized_level["expected_total"], online_randomized_level["fairness"], online_randomized_level["fraction_opt"], online_randomized_level["inverse_ratio"]),
+        ],
+        online=True,
+    )
+
+    return results
+
+
+# CLI
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Interval fairness experiments")
-    parser.add_argument("--input", type=str, help="Path to external data file")
+    parser = argparse.ArgumentParser(description="Interval scheduling experiments")
+    parser.add_argument("--input", type=str, help="Path to one input file or folder")
     parser.add_argument(
         "--input-list",
         type=str,
-        help="Path to a text file listing input files and/or folders to load",
+        help="Path to a text file listing input files and/or folders",
     )
     parser.add_argument(
         "--format",
@@ -1395,103 +1554,76 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--finish-col", type=str, default="Finish Time")
     parser.add_argument("--length-col", type=str, default=None)
     parser.add_argument("--group-col", type=str, default="Group")
-    parser.add_argument("--runs", type=int, default=100)
-    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--alpha",
         type=float,
-        default=0.0,
-        help="Use global greedy with probability alpha, otherwise use the permutation-based group greedy algorithm",
+        default=1.0,
+        help="Offline Deterministic block multiplier. Uses r = ceil(alpha * k).",
     )
+    parser.add_argument("--runs", type=int, default=100)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
-        "--group-permutation",
+        "--output",
         type=str,
-        help="Optional comma-separated group order, for example: 3,1,2,4",
-    )
-    parser.add_argument(
-        "--bpa-blocks",
-        type=int,
-        default=None,
-        help="Number of blocks k used by the Block Partitioning Algorithm. Defaults to the number of groups.",
-    )
-    parser.add_argument(
-        "--bpa-variant-alpha",
-        type=float,
-        default=None,
-        help="Run the BPA+greedy variant with ceil(alpha * k) blocks before the greedy tail.",
-    )
-    parser.add_argument(
-        "--skip-random-demo",
-        action="store_true",
-        help="Skip built-in random demo when external input is provided.",
+        default="experiment_results.csv",
+        help="Path to the CSV file used to store all experiment result rows.",
     )
     parser.add_argument(
         "--no-progress",
         action="store_true",
-        help="Hide progress bars while loading files and running repeated experiments.",
+        help="Hide progress bars for repeated randomized experiments.",
+    )
+    parser.add_argument(
+        "--debug-runs",
+        action="store_true",
+        help="Print every randomized run.",
+    )
+    parser.add_argument(
+        "--debug-blocks",
+        action="store_true",
+        help="Print selected blocks for Offline Deterministic.",
     )
     return parser.parse_args()
 
 
-def parse_group_permutation(raw_value: str | None) -> list[int] | None:
-    if raw_value is None:
-        return None
+def main() -> None:
+    args = parse_args()
+    if args.input and args.input_list:
+        raise ValueError("Use either --input or --input-list, not both")
+    if not args.input and not args.input_list:
+        raise ValueError("Provide --input or --input-list")
 
-    values = [part.strip() for part in raw_value.split(",")]
-    values = [part for part in values if part]
-    if not values:
-        return []
-    return [int(part) for part in values]
+    input_files = (
+        collect_input_files_from_manifest(args.input_list)
+        if args.input_list
+        else collect_input_files_from_path(args.input)
+    )
+
+    all_results: list[dict] = []
+    for input_file in input_files:
+        intervals = load_intervals_from_file(
+            path=str(input_file),
+            file_format=args.format,
+            start_col=args.start_col,
+            finish_col=args.finish_col,
+            length_col=args.length_col,
+            group_col=args.group_col,
+        )
+        workload_results = evaluate_workload(
+            input_file=input_file,
+            intervals=intervals,
+            alpha=args.alpha,
+            runs=args.runs,
+            seed=args.seed,
+            show_progress=not args.no_progress,
+            debug_runs=args.debug_runs,
+            debug_blocks=args.debug_blocks,
+        )
+        all_results.extend(workload_results)
+
+    save_results_to_csv(all_results, args.output)
+    print(f"\nSaved experiment results to: {args.output}")
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    group_permutation = parse_group_permutation(args.group_permutation)
-
-    if args.input and args.input_list:
-        raise ValueError("Use either --input or --input-list, not both")
-
-    if args.input or args.input_list:
-        if args.input_list:
-            external_intervals = load_intervals_from_manifest(
-                manifest_path=args.input_list,
-                start_col=args.start_col,
-                finish_col=args.finish_col,
-                length_col=args.length_col,
-                group_col=args.group_col,
-                show_progress=not args.no_progress,
-            )
-        else:
-            external_intervals = load_intervals_from_file(
-                path=args.input,
-                file_format=args.format,
-                start_col=args.start_col,
-                finish_col=args.finish_col,
-                length_col=args.length_col,
-                group_col=args.group_col,
-            )
-        run_fairness_with_intervals(
-            intervals=external_intervals,
-            num_runs=args.runs,
-            seed=args.seed,
-            alpha=args.alpha,
-            permutation=group_permutation,
-            show_progress=not args.no_progress,
-            bpa_blocks=args.bpa_blocks,
-            bpa_variant_alpha=args.bpa_variant_alpha,
-        )
-        if not args.skip_random_demo:
-            compare_online_vs_greedy(num_intervals_to_generate=50)
-            demo_fairness(
-                show_progress=not args.no_progress,
-                bpa_blocks=args.bpa_blocks,
-                bpa_variant_alpha=args.bpa_variant_alpha,
-            )
-    else:
-        compare_online_vs_greedy(num_intervals_to_generate=50)
-        demo_fairness(
-            show_progress=not args.no_progress,
-            bpa_blocks=args.bpa_blocks,
-            bpa_variant_alpha=args.bpa_variant_alpha,
-        )
-        demo_offline_fair_dp()
+    main()
