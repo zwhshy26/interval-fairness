@@ -31,7 +31,7 @@ ASSIGNMENT_METHODS = [
     "length_quantile",
 ]
 
-SEEDS = [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+SEEDS = [42, 43, 44, 45, 46]
 K_VALUES = range(2, 11)
 OUTPUT_FOLDER_NAME = "generated_intervals"
 

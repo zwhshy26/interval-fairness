@@ -1,0 +1,7 @@
+dataset,algorithm,group,selected,opt,group_ratio,total_selected,fairness_ratio,global_opt_total,comp_over_global_opt,min_interval_length,max_interval_length,delta,notes
+NASA-iPSC-1993-3.1-cln_interval_5groups_first_5,Single-run,1,5,5,1.000000,5,1.000000,5,1.000000,1067,10927,10.240862,alpha=0.0 seed=42
+NASA-iPSC-1993-3.1-cln_interval_5groups_first_5,OLCFISAS single,1,2,5,0.400000,2,0.400000,5,0.400000,1067,10927,10.240862,seed=42 class=10 group=1
+NASA-iPSC-1993-3.1-cln_interval_5groups_first_5,OLCFISAS multi avg,1,2,5,0.400000,2,0.400000,5,0.400000,1067,10927,10.240862,runs=1 seed=42
+NASA-iPSC-1993-3.1-cln_interval_5groups_first_5,Multi-run avg,1,5,5,1.000000,5,1.000000,5,1.000000,1067,10927,10.240862,runs=1 alpha=0.0 seed=42
+NASA-iPSC-1993-3.1-cln_interval_5groups_first_5,Greedy,1,5,5,1.000000,5,1.000000,5,1.000000,1067,10927,10.240862,global offline greedy
+NASA-iPSC-1993-3.1-cln_interval_5groups_first_5,BPA,1,5,5,1.000000,5,1.000000,5,1.000000,1067,10927,10.240862,k=1

@@ -1,0 +1,7 @@
+dataset,algorithm,group,selected,opt,group_ratio,total_selected,fairness_ratio,global_opt_total,comp_over_global_opt,min_interval_length,max_interval_length,delta,notes
+LANL-CM5-1994-4.1-cln_interval_5groups_first_5,Single-run,1,2,2,1.000000,2,1.000000,2,1.000000,626,3691,5.896166,alpha=0.0 seed=42
+LANL-CM5-1994-4.1-cln_interval_5groups_first_5,OLCFISAS single,1,0,2,0.000000,0,0.000000,2,0.000000,626,3691,5.896166,seed=42 class=10 group=1
+LANL-CM5-1994-4.1-cln_interval_5groups_first_5,OLCFISAS multi avg,1,0,2,0.000000,0,0.000000,2,0.000000,626,3691,5.896166,runs=1 seed=42
+LANL-CM5-1994-4.1-cln_interval_5groups_first_5,Multi-run avg,1,2,2,1.000000,2,1.000000,2,1.000000,626,3691,5.896166,runs=1 alpha=0.0 seed=42
+LANL-CM5-1994-4.1-cln_interval_5groups_first_5,Greedy,1,2,2,1.000000,2,1.000000,2,1.000000,626,3691,5.896166,global offline greedy
+LANL-CM5-1994-4.1-cln_interval_5groups_first_5,BPA,1,2,2,1.000000,2,1.000000,2,1.000000,626,3691,5.896166,k=1

@@ -417,11 +417,11 @@ def fair_dp_with_beta(
 
 def _fairness_ratio(quota: tuple[int, ...], opt_per_group: list[int]) -> float:
     ratios = [
-        quota[group] / opt
+        opt / quota[group] if quota[group] > 0 else math.inf
         for group, opt in enumerate(opt_per_group)
         if opt > 0
     ]
-    return min(ratios) if ratios else 1.0
+    return max(ratios) if ratios else 1.0
 
 
 def find_best_fairness_by_quota_enumeration(
@@ -436,7 +436,7 @@ def find_best_fairness_by_quota_enumeration(
     final_layer = dp[len(sorted_intervals)]
 
     best_quota = tuple(0 for _ in range(k))
-    best_beta = -1.0
+    best_beta = math.inf
     best_cardinality = -1
 
     for quota in quota_vectors:
@@ -445,9 +445,10 @@ def find_best_fairness_by_quota_enumeration(
             continue
 
         beta = _fairness_ratio(quota, opt_per_group)
-        candidate_key = (beta, cardinality, quota)
-        best_key = (best_beta, best_cardinality, best_quota)
-        if candidate_key > best_key:
+        if (
+            beta < best_beta
+            or (beta == best_beta and (cardinality, quota) > (best_cardinality, best_quota))
+        ):
             best_beta = beta
             best_cardinality = cardinality
             best_quota = quota
@@ -465,7 +466,7 @@ def find_best_fairness_by_quota_enumeration(
     )
 
     return BestFairnessResult(
-        best_beta=best_beta if best_beta >= 0 else 0.0,
+        best_beta=best_beta if best_cardinality >= 0 else math.inf,
         best_quota_vector=list(best_quota),
         max_cardinality_at_best_beta=max(best_cardinality, 0),
         opt_per_group=opt_per_group,
@@ -623,7 +624,6 @@ def run_offline_randomized_multiple_times(
     show_progress: bool = True,
     debug_runs: bool = False,
 ) -> dict:
-    run_totals: list[int] = []
     run_counts: list[dict[int, int]] = []
     chosen_groups: list[int] = []
     progress = ProgressBar(runs, "Offline randomized", enabled=show_progress)
@@ -636,7 +636,6 @@ def run_offline_randomized_multiple_times(
         counts = count_by_group(solution)
         chosen_groups.append(chosen_group)
         run_counts.append(counts)
-        run_totals.append(len(solution))
         if debug_runs:
             print(
                 f"Offline randomized run {run_index + 1}: "
@@ -646,7 +645,7 @@ def run_offline_randomized_multiple_times(
 
     progress.finish()
     mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    expected_total = mean(run_totals) if run_totals else 0.0
+    expected_total = sum(mean_by_group.values())
     return {
         "runs": runs,
         "expected_total": expected_total,
@@ -748,7 +747,6 @@ def run_online_random_group_level_multiple_times(
     show_progress: bool = True,
     debug_runs: bool = False,
 ) -> dict:
-    run_totals: list[int] = []
     run_counts: list[dict[int, int]] = []
     chosen_groups: list[int] = []
     chosen_levels: list[int] = []
@@ -764,7 +762,6 @@ def run_online_random_group_level_multiple_times(
         chosen_groups.append(chosen_group)
         chosen_levels.append(chosen_level)
         run_counts.append(counts)
-        run_totals.append(len(solution))
         if debug_runs:
             print(
                 f"Online randomized run {run_index + 1}: "
@@ -774,7 +771,7 @@ def run_online_random_group_level_multiple_times(
 
     progress.finish()
     mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    expected_total = mean(run_totals) if run_totals else 0.0
+    expected_total = sum(mean_by_group.values())
     return {
         "runs": runs,
         "num_levels": num_levels,
@@ -824,7 +821,6 @@ def run_online_random_level_greedy_multiple_times(
     show_progress: bool = True,
     debug_runs: bool = False,
 ) -> dict:
-    run_totals: list[int] = []
     run_counts: list[dict[int, int]] = []
     chosen_levels: list[int] = []
     num_levels = compute_num_length_levels(intervals)
@@ -838,7 +834,6 @@ def run_online_random_level_greedy_multiple_times(
         counts = count_by_group(solution)
         chosen_levels.append(chosen_level)
         run_counts.append(counts)
-        run_totals.append(len(solution))
         if debug_runs:
             print(
                 f"Online randomized level run {run_index + 1}: "
@@ -848,7 +843,7 @@ def run_online_random_level_greedy_multiple_times(
 
     progress.finish()
     mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    expected_total = mean(run_totals) if run_totals else 0.0
+    expected_total = sum(mean_by_group.values())
     return {
         "runs": runs,
         "num_levels": num_levels,
@@ -869,11 +864,11 @@ def deterministic_fairness(
     opt_by_group: dict[int, int],
 ) -> float:
     ratios = [
-        counts.get(group, 0) / opt
+        opt / counts.get(group, 0) if counts.get(group, 0) > 0 else math.inf
         for group, opt in opt_by_group.items()
         if opt > 0
     ]
-    return min(ratios) if ratios else 1.0
+    return max(ratios) if ratios else 1.0
 
 
 def ex_ante_fairness(
@@ -881,11 +876,13 @@ def ex_ante_fairness(
     opt_by_group: dict[int, int],
 ) -> float:
     ratios = [
-        mean_by_group.get(group, 0.0) / opt
+        opt / mean_by_group.get(group, 0.0)
+        if mean_by_group.get(group, 0.0) > 0
+        else math.inf
         for group, opt in opt_by_group.items()
         if opt > 0
     ]
-    return min(ratios) if ratios else 1.0
+    return max(ratios) if ratios else 1.0
 
 
 def mean_counts_by_group(
@@ -909,7 +906,7 @@ def safe_inverse_ratio(reference: float, value: float) -> float:
     return reference / value if value > 0 else math.inf
 
 
-def delta_k_formula(delta: float, k: int) -> float:
+def offline_approximation_bound(delta: float, k: int) -> float:
     denominator = delta + k - 1
     return (delta * k / denominator) if denominator > 0 else 0.0
 
@@ -930,6 +927,7 @@ def build_result_row(
     fairness: float,
     fraction_opt: float,
     inverse_ratio: float,
+    delta: float,
     num_levels: int | None = None,
 ) -> dict:
     return {
@@ -944,6 +942,7 @@ def build_result_row(
         "fairness": fairness,
         "fraction_opt": fraction_opt,
         "inverse_ratio": inverse_ratio,
+        "delta": delta,
         "num_levels": num_levels,
     }
 
@@ -982,7 +981,8 @@ def print_instance_summary(
     print(f"Minimum length:        {min_length}")
     print(f"Maximum length:        {max_length}")
     print(f"Delta:                 {delta:.3f}")
-    print(f"Delta-k bound:         {delta_k_formula(delta, len(groups)):.3f}")
+    print(f"Offline fairness bound:{len(groups): .3f}")
+    print(f"Offline approx bound:  {offline_approximation_bound(delta, len(groups)):.3f}")
     print(f"Length levels:         {num_levels}")
     print(f"Global offline OPT:    {global_opt}")
     print(f"OPT by group:          {opt_by_group}")
@@ -1001,7 +1001,7 @@ def print_algorithm_detail(
     print(f"\n{name}")
     print(f"Selected:              {selected:.2f}" if isinstance(selected, float) and not selected.is_integer() else f"Selected:              {int(selected)}")
     print(f"Selected by group:     {by_group}")
-    print(f"Fairness:              {fairness:.3f}")
+    print(f"Fairness ratio:        {format_float(fairness)}")
     print(f"{fraction_label}:      {fraction_value:.3f}")
     print(f"{ratio_label}:         {format_float(ratio_value)}")
 
@@ -1014,12 +1014,12 @@ def print_comparison_table(
     print(f"\n{title}")
     if online:
         print(
-            f"{'Algorithm':<24}{'Selected':<12}{'Fairness':<12}"
+            f"{'Algorithm':<24}{'Selected':<12}{'Fairness Ratio':<16}"
             f"{'Fraction Offline OPT':<22}{'Offline OPT / ALG':<18}"
         )
     else:
         print(
-            f"{'Algorithm':<24}{'Selected':<12}{'Fairness':<12}"
+            f"{'Algorithm':<24}{'Selected':<12}{'Fairness Ratio':<16}"
             f"{'Fraction OPT':<16}{'OPT / ALG':<12}"
         )
 
@@ -1030,7 +1030,7 @@ def print_comparison_table(
             else f"{selected:.2f}"
         )
         print(
-            f"{name:<24}{selected_text:<12}{fairness:<12.3f}"
+            f"{name:<24}{selected_text:<12}{format_float(fairness):<16}"
             f"{fraction_opt:<16.3f}{format_float(inverse_ratio):<12}"
         )
 
@@ -1293,6 +1293,10 @@ def evaluate_workload(
     global_opt_solution = run_offline_greedy(intervals)
     global_opt = len(global_opt_solution)
     _, opt_by_group = compute_optimal_per_group(intervals)
+    lengths = [interval.length for interval in intervals if interval.length > 0]
+    min_length = min(lengths) if lengths else 0
+    max_length = max(lengths) if lengths else 0
+    delta = (max_length / min_length) if min_length > 0 else 0.0
 
     print("\n" + "=" * 80)
     print_instance_summary(input_file, intervals, opt_by_group, global_opt)
@@ -1328,6 +1332,7 @@ def evaluate_workload(
             fairness=offline_greedy_fairness,
             fraction_opt=offline_greedy_fraction,
             inverse_ratio=offline_greedy_ratio,
+            delta=delta,
             num_levels=None,
         )
     )
@@ -1340,19 +1345,16 @@ def evaluate_workload(
     deterministic_fair = deterministic_fairness(deterministic_counts, opt_by_group)
     deterministic_fraction = safe_fraction(len(deterministic_solution), global_opt)
     deterministic_ratio = safe_inverse_ratio(global_opt, len(deterministic_solution))
-    lengths = [interval.length for interval in intervals if interval.length > 0]
-    min_length = min(lengths) if lengths else 0
-    max_length = max(lengths) if lengths else 0
-    delta = (max_length / min_length) if min_length > 0 else 0.0
-    delta_k_bound = delta_k_formula(delta, k)
+    approximation_bound = offline_approximation_bound(delta, k)
     print("\nOffline Deterministic")
     print(f"k:                     {k}")
     print(f"alpha:                 {alpha:.3f}")
     print(f"r:                     {resolved_r}")
-    print(f"Delta-k bound:         {delta_k_bound:.3f}")
+    print(f"Offline fairness bound:{k: .3f}")
+    print(f"Offline approx bound:  {approximation_bound:.3f}")
     print(f"Selected:              {len(deterministic_solution)}")
     print(f"Selected by group:     {deterministic_counts}")
-    print(f"Fairness:              {deterministic_fair:.3f}")
+    print(f"Fairness ratio:        {format_float(deterministic_fair)}")
     print(f"Fraction of global OPT:{deterministic_fraction: .3f}")
     print(f"Observed OPT / ALG ratio: {format_float(deterministic_ratio)}")
     if debug_blocks:
@@ -1370,6 +1372,7 @@ def evaluate_workload(
             fairness=deterministic_fair,
             fraction_opt=deterministic_fraction,
             inverse_ratio=deterministic_ratio,
+            delta=delta,
             num_levels=None,
         )
     )
@@ -1387,7 +1390,7 @@ def evaluate_workload(
     print(f"Runs:                  {offline_randomized['runs']}")
     print(f"Expected selected:     {offline_randomized['expected_total']:.2f}")
     print(f"Mean selected by group:{offline_randomized['mean_by_group']}")
-    print(f"Estimated ex-ante fairness: {offline_randomized['fairness']:.3f}")
+    print(f"Estimated ex-ante fairness ratio: {format_float(offline_randomized['fairness'])}")
     print(f"Fraction of global OPT:{offline_randomized['fraction_opt']: .3f}")
     print(f"Observed OPT / ALG ratio: {format_float(offline_randomized['inverse_ratio'])}")
     results.append(
@@ -1403,6 +1406,7 @@ def evaluate_workload(
             fairness=offline_randomized["fairness"],
             fraction_opt=offline_randomized["fraction_opt"],
             inverse_ratio=offline_randomized["inverse_ratio"],
+            delta=delta,
             num_levels=None,
         )
     )
@@ -1448,6 +1452,7 @@ def evaluate_workload(
             fairness=simple_online_fair,
             fraction_opt=simple_online_fraction,
             inverse_ratio=simple_online_ratio,
+            delta=delta,
             num_levels=None,
         )
     )
@@ -1466,7 +1471,7 @@ def evaluate_workload(
     print(f"Length levels:         {online_randomized['num_levels']}")
     print(f"Expected selected:     {online_randomized['expected_total']:.2f}")
     print(f"Mean selected by group:{online_randomized['mean_by_group']}")
-    print(f"Estimated ex-ante fairness: {online_randomized['fairness']:.3f}")
+    print(f"Estimated ex-ante fairness ratio: {format_float(online_randomized['fairness'])}")
     print(f"Fraction of global offline OPT:{online_randomized['fraction_opt']: .3f}")
     print(f"Observed offline OPT / ALG ratio: {format_float(online_randomized['inverse_ratio'])}")
     results.append(
@@ -1482,6 +1487,7 @@ def evaluate_workload(
             fairness=online_randomized["fairness"],
             fraction_opt=online_randomized["fraction_opt"],
             inverse_ratio=online_randomized["inverse_ratio"],
+            delta=delta,
             num_levels=online_randomized["num_levels"],
         )
     )
@@ -1500,7 +1506,7 @@ def evaluate_workload(
     print(f"Length levels:         {online_randomized_level['num_levels']}")
     print(f"Expected selected:     {online_randomized_level['expected_total']:.2f}")
     print(f"Mean selected by group:{online_randomized_level['mean_by_group']}")
-    print(f"Estimated ex-ante fairness: {online_randomized_level['fairness']:.3f}")
+    print(f"Estimated ex-ante fairness ratio: {format_float(online_randomized_level['fairness'])}")
     print(f"Fraction of global offline OPT:{online_randomized_level['fraction_opt']: .3f}")
     print(f"Observed offline OPT / ALG ratio: {format_float(online_randomized_level['inverse_ratio'])}")
     results.append(
@@ -1516,6 +1522,7 @@ def evaluate_workload(
             fairness=online_randomized_level["fairness"],
             fraction_opt=online_randomized_level["fraction_opt"],
             inverse_ratio=online_randomized_level["inverse_ratio"],
+            delta=delta,
             num_levels=online_randomized_level["num_levels"],
         )
     )

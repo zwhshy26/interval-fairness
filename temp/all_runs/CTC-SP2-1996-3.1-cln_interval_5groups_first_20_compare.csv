@@ -1,0 +1,7 @@
+dataset,algorithm,group,selected,opt,group_ratio,total_selected,fairness_ratio,global_opt_total,comp_over_global_opt,min_interval_length,max_interval_length,delta,notes
+CTC-SP2-1996-3.1-cln_interval_5groups_first_20,Single-run,1,6,6,1.000000,6,1.000000,6,1.000000,75,61578,821.040000,alpha=0.0 seed=42
+CTC-SP2-1996-3.1-cln_interval_5groups_first_20,OLCFISAS single,1,0,6,0.000000,0,0.000000,6,0.000000,75,61578,821.040000,seed=42 class=3 group=1
+CTC-SP2-1996-3.1-cln_interval_5groups_first_20,OLCFISAS multi avg,1,0,6,0.000000,0,0.000000,6,0.000000,75,61578,821.040000,runs=2 seed=42
+CTC-SP2-1996-3.1-cln_interval_5groups_first_20,Multi-run avg,1,6,6,1.000000,6,1.000000,6,1.000000,75,61578,821.040000,runs=2 alpha=0.0 seed=42
+CTC-SP2-1996-3.1-cln_interval_5groups_first_20,Greedy,1,6,6,1.000000,6,1.000000,6,1.000000,75,61578,821.040000,global offline greedy
+CTC-SP2-1996-3.1-cln_interval_5groups_first_20,BPA,1,6,6,1.000000,6,1.000000,6,1.000000,75,61578,821.040000,k=1
