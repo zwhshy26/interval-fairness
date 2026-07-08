@@ -1,0 +1,8 @@
+# One line per entry.
+# You can write either:
+# 1) a folder path, and the program will recursively load all .csv/.json/.swf files in it
+# 2) a single file path
+#
+# Paths can be relative to this file.
+#
+./new_folder

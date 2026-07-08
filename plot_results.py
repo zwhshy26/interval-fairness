@@ -24,7 +24,7 @@ except ModuleNotFoundError as exc:
 
 
 FILENAME_RE = re.compile(
-    r"_interval_(?P<assignment_method>.+)_(?P<k>\d+)groups_seed(?P<assignment_seed>\d+)\.csv$"
+    r"_interval_(?P<assignment_method>.+)_(?P<k>\d+)groups(?:_seed(?P<assignment_seed>\d+))?\.csv$"
 )
 
 ALGORITHM_LABELS = {
@@ -33,7 +33,7 @@ ALGORITHM_LABELS = {
     "offline_randomized": "Offline Randomized",
     "simple_online_greedy": "Simple Online Greedy",
     "online_randomized": "Online Randomized",
-    "online_randomized_level_greedy": "Online Randomized Level",
+    "online_randomized_level_greedy": "CRS",
 }
 
 ALGORITHM_COLORS = {
@@ -46,9 +46,18 @@ ALGORITHM_COLORS = {
 }
 
 ALGORITHM_X_OFFSETS = {
-    "offline_deterministic": -0.08,
-    "offline_greedy": 0.0,
+    "offline_greedy": -0.08,
+    "offline_deterministic": 0.0,
     "offline_randomized": 0.08,
+}
+
+ALGORITHM_ORDER = {
+    "offline_greedy": 0,
+    "offline_deterministic": 1,
+    "offline_randomized": 2,
+    "simple_online_greedy": 3,
+    "online_randomized": 4,
+    "online_randomized_level_greedy": 5,
 }
 
 ALGORITHM_MARKERS = {
@@ -69,17 +78,46 @@ ALGORITHM_SETTINGS = {
     "online_randomized_level_greedy": "online",
 }
 
-EXCLUDED_PLOT_ALGORITHMS = {
-    "online_randomized",
-    "online_randomized_level_greedy",
+ALGORITHMS_BY_SETTING = {
+    "offline": [
+        ("offline_greedy", "Greedy"),
+        ("offline_deterministic", "Deterministic"),
+        ("offline_randomized", "Randomized"),
+    ],
+    "online": [
+        ("simple_online_greedy", "Greedy"),
+        ("online_randomized", "Randomized"),
+        ("online_randomized_level_greedy", "CRS"),
+    ],
 }
+
+OFFLINE_FAIRNESS_ALGORITHMS = [
+    ("offline_greedy", "Offline Optimal"),
+    ("offline_deterministic", "Deterministic"),
+    ("offline_randomized", "Randomized"),
+]
+
+RATIO_ALGORITHMS_BY_SETTING = {
+    "offline": [
+        ("offline_deterministic", "Deterministic"),
+        ("offline_randomized", "Randomized"),
+    ],
+    "online": [
+        ("online_randomized", "Randomized"),
+        ("online_randomized_level_greedy", "CRS"),
+    ],
+}
+
+EXCLUDED_PLOT_ALGORITHMS: set[str] = set()
 
 METRICS = {
     "fairness": "Fairness Ratio",
     "fraction_opt": "Fraction OPT",
-    "inverse_ratio": "OPT / ALG",
+    "inverse_ratio": "Ratio",
     "selected": "Selected",
 }
+
+CI_BAND_ALPHA = 0.22
 
 
 DELTA_CACHE = {}
@@ -173,9 +211,10 @@ def mean_and_ci95(values) -> tuple[float, float]:
 
 
 def parse_input_metadata(input_file: str) -> dict:
-    path = Path(input_file)
-    workload = path.parent.name or "unknown"
-    match = FILENAME_RE.search(path.name)
+    parts = [part for part in re.split(r"[\\/]+", input_file) if part]
+    filename = parts[-1] if parts else Path(input_file).name
+    workload = parts[-2] if len(parts) >= 2 else "unknown"
+    match = FILENAME_RE.search(filename)
     if not match:
         return {
             "workload": workload,
@@ -188,7 +227,11 @@ def parse_input_metadata(input_file: str) -> dict:
         "workload": workload,
         "assignment_method": match.group("assignment_method"),
         "assignment_k": int(match.group("k")),
-        "assignment_seed": int(match.group("assignment_seed")),
+        "assignment_seed": (
+            int(match.group("assignment_seed"))
+            if match.group("assignment_seed") is not None
+            else None
+        ),
     }
 
 
@@ -328,7 +371,10 @@ def points_for_chart(
 
     return {
         algorithm: sorted(points)
-        for algorithm, points in sorted(series.items())
+        for algorithm, points in sorted(
+            series.items(),
+            key=lambda item: algorithm_sort_key(item[0]),
+        )
     }
 
 
@@ -358,7 +404,10 @@ def points_for_workload_chart(
 
     return {
         algorithm: sorted(points)
-        for algorithm, points in sorted(series.items())
+        for algorithm, points in sorted(
+            series.items(),
+            key=lambda item: algorithm_sort_key(item[0]),
+        )
     }
 
 
@@ -413,16 +462,32 @@ def safe_filename(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value).strip("_")
 
 
+def format_workload_label(value: str) -> str:
+    return re.sub(r"-\d{4}$", "", value)
+
+
+def algorithm_sort_key(algorithm: str) -> tuple[int, str]:
+    return (ALGORITHM_ORDER.get(algorithm, len(ALGORITHM_ORDER)), algorithm)
+
+
 def chart_title(metric_label: str, assignment_method: str, setting: str, metric: str) -> str:
     method_label = format_assignment_method(assignment_method)
     if setting == "offline" and metric == "fairness":
         return f"Fairness Ratio under {method_label} Group Assignment"
+    if setting == "offline" and metric == "inverse_ratio":
+        return f"Approximation Ratio under {method_label} Group Assignment"
+    if setting == "online" and metric == "inverse_ratio":
+        return f"Competitive Ratio under {method_label} Group Assignment"
     return f"{metric_label} by k ({assignment_method}, {setting}, mean +/- 95% CI)"
 
 
 def chart_y_label(metric_label: str, setting: str, metric: str) -> str:
     if setting == "offline" and metric == "fairness":
         return r"Fairness Ratio ($\max_g\ \mathrm{OPT}_g / \mathrm{ALG}_g$)"
+    if setting == "offline" and metric == "inverse_ratio":
+        return "Approximation Ratio"
+    if setting == "online" and metric == "inverse_ratio":
+        return "Competitive Ratio"
     return metric_label
 
 
@@ -443,11 +508,7 @@ def save_offline_fairness_small_multiples(
         )
         return
 
-    algorithms = [
-        ("offline_deterministic", "Deterministic"),
-        ("offline_greedy", "Greedy"),
-        ("offline_randomized", "Randomized"),
-    ]
+    algorithms = OFFLINE_FAIRNESS_ALGORITHMS
     ci_values = [
         value
         for algorithm, _ in algorithms
@@ -467,7 +528,7 @@ def save_offline_fairness_small_multiples(
     fig, axes = plt.subplots(
         1,
         len(algorithms),
-        figsize=(9.2, 3.1),
+        figsize=(max(3.2 * len(algorithms), 6.4), 3.1),
         dpi=300,
         sharex=True,
         sharey=True,
@@ -475,6 +536,7 @@ def save_offline_fairness_small_multiples(
     )
 
     for panel_index, (ax, (algorithm, panel_title)) in enumerate(zip(axes, algorithms)):
+        ax.set_axisbelow(True)
         color = ALGORITHM_COLORS.get(algorithm, "#2563eb")
         marker = ALGORITHM_MARKERS.get(algorithm, "o")
 
@@ -493,7 +555,7 @@ def save_offline_fairness_small_multiples(
                 lower_values,
                 upper_values,
                 color=color,
-                alpha=0.10,
+                alpha=CI_BAND_ALPHA,
                 linewidth=0,
                 zorder=1,
             )
@@ -515,7 +577,6 @@ def save_offline_fairness_small_multiples(
             alpha=0.55,
             zorder=0,
         )
-        ax.set_title(panel_title, fontsize=11)
         ax.set_xticks(list(range(2, 11)))
         ax.set_xlim(1.7, 10.3)
         ax.set_ylim(y_min, y_max)
@@ -528,10 +589,98 @@ def save_offline_fairness_small_multiples(
                 fontsize=10,
             )
 
-    title = f"Fairness Ratio under {format_assignment_method(assignment_method)} Group Assignment"
-    if title_prefix:
-        title = f"{title_prefix}: {title}"
-    fig.suptitle(title, fontsize=13)
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
+def save_workload_fairness_grid(
+    series_by_workload: dict[str, dict[str, list[tuple[int, float, float]]]],
+    assignment_method: str,
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    workloads = sorted(series_by_workload)[:4]
+    algorithms = OFFLINE_FAIRNESS_ALGORITHMS
+    if not workloads:
+        return
+
+    log_scale = assignment_method == "length_quantile"
+    y_values = []
+    for workload in workloads:
+        series = series_by_workload[workload]
+        for algorithm, _ in algorithms:
+            for _, mean_value, ci95 in series.get(algorithm, []):
+                for value in (mean_value - ci95, mean_value, mean_value + ci95):
+                    if math.isfinite(value) and (not log_scale or value > 0):
+                        y_values.append(value)
+
+    if not y_values:
+        return
+
+    if log_scale:
+        y_min = max(min(y_values) * 0.82, 1e-12)
+        y_max = max(y_values) * 1.22
+    else:
+        y_min = max(1.0, min(y_values) - max((max(y_values) - min(y_values)) * 0.10, 0.05))
+        y_max = max(y_values) + max((max(y_values) - min(y_values)) * 0.10, 0.05)
+    if y_max <= y_min:
+        y_max = y_min * 1.1 if log_scale else y_min + 0.1
+
+    fig, axes = plt.subplots(
+        len(workloads),
+        len(algorithms),
+        figsize=(9.8, 8.6),
+        dpi=300,
+        sharex=True,
+        sharey=True,
+        constrained_layout=True,
+    )
+    if len(workloads) == 1:
+        axes = [axes]
+
+    for row_index, workload in enumerate(workloads):
+        series = series_by_workload[workload]
+        for column_index, (algorithm, label) in enumerate(algorithms):
+            ax = axes[row_index][column_index]
+            ax.set_axisbelow(True)
+            points = [
+                (k, mean_value, ci95)
+                for k, mean_value, ci95 in series.get(algorithm, [])
+                if math.isfinite(mean_value) and math.isfinite(ci95)
+            ]
+            _plot_mean_with_ci_band(
+                ax,
+                points,
+                algorithm,
+                label,
+                log_scale=log_scale,
+                show_ci=True,
+            )
+            if log_scale:
+                ax.set_yscale("log")
+            ax.axhline(
+                1.0,
+                linestyle="--",
+                linewidth=1.0,
+                color="#6b7280",
+                alpha=0.55,
+                zorder=0,
+            )
+            if row_index == 0:
+                ax.set_title(label, fontsize=11)
+            if column_index == 0:
+                ax.set_ylabel(format_workload_label(workload), fontsize=10)
+            if row_index == len(workloads) - 1:
+                ax.set_xlabel("k", fontsize=10)
+            ax.set_xticks(list(range(2, 11)))
+            ax.set_xlim(1.7, 10.3)
+            ax.set_ylim(y_min, y_max)
+            ax.grid(True, which="major", alpha=0.22, linewidth=0.7)
+            if log_scale:
+                ax.grid(True, which="minor", axis="y", alpha=0.10, linewidth=0.55)
+            ax.tick_params(axis="both", labelsize=8)
+
     fig.savefig(output_path)
     plt.close(fig)
 
@@ -587,7 +736,7 @@ def _plot_mean_with_ci_band(
             lower_values,
             upper_values,
             color=color,
-            alpha=0.12,
+            alpha=CI_BAND_ALPHA,
             linewidth=0,
             zorder=1,
         )
@@ -607,17 +756,86 @@ def _plot_mean_with_ci_band(
     return [value for value in plotted_y_values if math.isfinite(value)]
 
 
+def save_metric_small_multiples(
+    series: dict[str, list[tuple[int, float, float]]],
+    assignment_method: str,
+    setting: str,
+    metric: str,
+    metric_label: str,
+    output_path: Path,
+    title_prefix: str | None = None,
+    lower_bound: float | None = None,
+    algorithms: list[tuple[str, str]] | None = None,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    algorithms = algorithms or ALGORITHMS_BY_SETTING.get(setting, [])
+    if not algorithms:
+        return
+
+    ci_values = [
+        value
+        for algorithm, _ in algorithms
+        if algorithm in series
+        for _, mean_value, ci95 in series[algorithm]
+        for value in (mean_value - ci95, mean_value + ci95)
+        if math.isfinite(value)
+    ]
+    if not ci_values:
+        return
+
+    y_min = min(ci_values) - max((max(ci_values) - min(ci_values)) * 0.10, 0.05)
+    if lower_bound is not None:
+        y_min = max(lower_bound, y_min)
+    y_max = max(ci_values) + max((max(ci_values) - min(ci_values)) * 0.10, 0.05)
+    if y_max <= y_min:
+        y_max = y_min + 0.1
+
+    fig, axes = plt.subplots(
+        1,
+        len(algorithms),
+        figsize=(max(3.2 * len(algorithms), 6.4), 3.1),
+        dpi=300,
+        sharex=True,
+        sharey=True,
+        constrained_layout=True,
+    )
+    if len(algorithms) == 1:
+        axes = [axes]
+
+    for panel_index, (ax, (algorithm, panel_title)) in enumerate(zip(axes, algorithms)):
+        ax.set_axisbelow(True)
+        points = [
+            (k, mean_value, ci95)
+            for k, mean_value, ci95 in series.get(algorithm, [])
+            if math.isfinite(mean_value) and math.isfinite(ci95)
+        ]
+        _plot_mean_with_ci_band(
+            ax,
+            points,
+            algorithm,
+            panel_title,
+            show_ci=True,
+        )
+        ax.set_xticks(list(range(2, 11)))
+        ax.set_xlim(1.7, 10.3)
+        ax.set_ylim(y_min, y_max)
+        ax.grid(True, alpha=0.22, linewidth=0.7)
+        ax.tick_params(axis="both", labelsize=9)
+        ax.set_xlabel("k", fontsize=10)
+        if panel_index == 0:
+            ax.set_ylabel(chart_y_label(metric_label, setting, metric), fontsize=10)
+
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
 def save_length_quantile_offline_fairness_figure(
     series: dict[str, list[tuple[int, float, float]]],
     assignment_method: str,
     output_path: Path,
     title_prefix: str | None = None,
 ) -> None:
-    algorithms = [
-        ("offline_deterministic", "Deterministic"),
-        ("offline_greedy", "Greedy"),
-        ("offline_randomized", "Randomized"),
-    ]
+    algorithms = OFFLINE_FAIRNESS_ALGORITHMS
 
     fig, axes = plt.subplots(
         1,
@@ -631,6 +849,7 @@ def save_length_quantile_offline_fairness_figure(
 
     log_y_values = []
     for panel_index, (ax, (algorithm, panel_title)) in enumerate(zip(axes, algorithms)):
+        ax.set_axisbelow(True)
         points = _finite_fairness_points(series, algorithm, require_positive_mean=True)
         log_y_values.extend(
             _plot_mean_with_ci_band(
@@ -639,11 +858,10 @@ def save_length_quantile_offline_fairness_figure(
                 algorithm,
                 panel_title,
                 log_scale=True,
-                show_ci=False,
+                show_ci=True,
             )
         )
         ax.set_yscale("log")
-        ax.set_title(panel_title, fontsize=11)
         ax.set_xticks(list(range(2, 11)))
         ax.set_xlim(1.7, 10.3)
         ax.set_xlabel("k", fontsize=10)
@@ -671,10 +889,6 @@ def save_length_quantile_offline_fairness_figure(
             max(positive_log_values) * 1.22,
         )
 
-    title = f"Fairness Ratio under {format_assignment_method(assignment_method)} Group Assignment"
-    if title_prefix:
-        title = f"{title_prefix}: {title}"
-    fig.suptitle(title, fontsize=13)
     fig.savefig(output_path)
     plt.close(fig)
 
@@ -743,7 +957,6 @@ def save_length_quantile_offline_fairness_detail(
         alpha=0.62,
         zorder=0,
     )
-    ax.set_title("Deterministic vs. Randomized under Length Quantile Assignment", fontsize=12)
     ax.set_xlabel("k", fontsize=10)
     ax.set_ylabel(
         r"Fairness Ratio ($\max_g\ \mathrm{OPT}_g / \mathrm{ALG}_g$)",
@@ -841,7 +1054,6 @@ def save_line_chart(
             label="Optimal (=1)",
         )
 
-    ax.set_title(title, fontsize=13)
     ax.set_xlabel("k", fontsize=11)
     ax.set_ylabel(y_label, fontsize=11)
     ax.set_xticks(x_ticks if x_ticks is not None else all_k_values)
@@ -886,7 +1098,12 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                 series = points_for_chart(summary, assignment_method, setting, metric)
                 if not series:
                     continue
-                output_path = output_dir / f"{assignment_method}_{setting}_{metric}_by_k.png"
+                output_metric = metric
+                if metric == "inverse_ratio" and setting == "offline":
+                    output_metric = "approximation_ratio"
+                elif metric == "inverse_ratio" and setting == "online":
+                    output_metric = "competitive_ratio"
+                output_path = output_dir / f"{assignment_method}_{setting}_{output_metric}_by_k.png"
                 if setting == "offline" and metric == "fairness":
                     save_offline_fairness_small_multiples(
                         series=series,
@@ -904,6 +1121,20 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                             output_path=detail_output_path,
                         )
                         chart_paths.append(detail_output_path)
+                    continue
+
+                if metric == "inverse_ratio":
+                    save_metric_small_multiples(
+                        series=series,
+                        assignment_method=assignment_method,
+                        setting=setting,
+                        metric=metric,
+                        metric_label=label,
+                        output_path=output_path,
+                        lower_bound=1.0,
+                        algorithms=RATIO_ALGORITHMS_BY_SETTING.get(setting),
+                    )
+                    chart_paths.append(output_path)
                     continue
 
                 theory_points = theory_points_for_chart(
@@ -928,6 +1159,7 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                 )
                 chart_paths.append(output_path)
 
+        workload_fairness_series = {}
         for workload in workloads:
             series = points_for_workload_chart(
                 summary,
@@ -938,6 +1170,7 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
             )
             if not series:
                 continue
+            workload_fairness_series[workload] = series
             output_path = (
                 output_dir
                 / "by_workload"
@@ -948,6 +1181,18 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                 assignment_method=assignment_method,
                 output_path=output_path,
                 title_prefix=workload,
+            )
+            chart_paths.append(output_path)
+        if workload_fairness_series:
+            output_path = (
+                output_dir
+                / "by_workload"
+                / f"{assignment_method}_offline_fairness_grid_by_workload.png"
+            )
+            save_workload_fairness_grid(
+                series_by_workload=workload_fairness_series,
+                assignment_method=assignment_method,
+                output_path=output_path,
             )
             chart_paths.append(output_path)
     return chart_paths

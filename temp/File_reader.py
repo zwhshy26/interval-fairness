@@ -29,6 +29,12 @@ ASSIGNMENT_METHODS = [
     "uniform",
     "exponential",
     "length_quantile",
+    "containment_quantile",
+]
+
+RANDOM_ASSIGNMENT_METHODS = [
+    "uniform",
+    "exponential",
 ]
 
 SEEDS = [42, 43, 44, 45, 46]
@@ -52,13 +58,13 @@ def discrete_exponential_weights(num_groups: int, decay: float = 0.6) -> list[fl
 def build_group_ids(
     df: pd.DataFrame,
     num_groups: int,
-    seed: int,
+    seed: int | None,
     assignment_method: str,
 ) -> pd.Series:
     num_jobs = len(df)
-    rng = random.Random(seed)
 
     if assignment_method == "uniform":
+        rng = random.Random(seed)
         group_ids = [
             rng.randint(1, num_groups)
             for _ in range(num_jobs)
@@ -66,6 +72,7 @@ def build_group_ids(
         return pd.Series(group_ids, index=df.index)
 
     if assignment_method == "exponential":
+        rng = random.Random(seed)
         groups = list(range(1, num_groups + 1))
         weights = discrete_exponential_weights(num_groups)
         group_ids = [
@@ -82,6 +89,31 @@ def build_group_ids(
         ]
         return pd.Series(group_ids, index=sorted_index)
 
+    if assignment_method == "containment_quantile":
+        interval_df = pd.DataFrame(
+            {
+                "start": df["submit_time"],
+                "finish": df["submit_time"] + df["run_time"],
+            },
+            index=df.index,
+        )
+
+        containment_counts = []
+        for _, interval_i in interval_df.iterrows():
+            count = (
+                (interval_df["start"] >= interval_i["start"])
+                & (interval_df["finish"] <= interval_i["finish"])
+            ).sum() - 1
+            containment_counts.append(count)
+
+        interval_df["_containment_count"] = containment_counts
+        group_ids = pd.qcut(
+            interval_df["_containment_count"].rank(method="first"),
+            q=num_groups,
+            labels=False,
+        ) + 1
+        return pd.Series(group_ids, index=df.index)
+
     raise ValueError(
         f"Unknown assignment_method: {assignment_method}. "
         f"Use one of: {', '.join(ASSIGNMENT_METHODS)}"
@@ -92,10 +124,13 @@ def convert_one_file(
     file_path: Path,
     output_folder: Path,
     num_groups: int = 10,
-    seed: int = 42,
+    seed: int | None = 42,
     assignment_method: str = "uniform",
 ) -> None:
-    output_suffix = f"_interval_{assignment_method}_{num_groups}groups_seed{seed}.csv"
+    if seed is None:
+        output_suffix = f"_interval_{assignment_method}_{num_groups}groups.csv"
+    else:
+        output_suffix = f"_interval_{assignment_method}_{num_groups}groups_seed{seed}.csv"
     output_name = file_path.name.replace(".swf.gz", output_suffix)
     output_path = output_folder / output_name
 
@@ -121,7 +156,8 @@ def convert_one_file(
 
     print(f"Rows after filtering: {len(df)}")
     print(f"Number of groups: {num_groups}")
-    print(f"Random seed: {seed}")
+    if seed is not None:
+        print(f"Random seed: {seed}")
 
     if num_jobs == 0:
         interval_df = pd.DataFrame(columns=["start", "length", "group_id"])
@@ -164,7 +200,8 @@ def main():
     print("Output folder:", output_folder)
     print("Number of .swf.gz files found:", len(files))
     print("K values:", list(K_VALUES))
-    print("Seeds:", SEEDS)
+    print("Random seeds:", SEEDS)
+    print("Random assignment methods:", RANDOM_ASSIGNMENT_METHODS)
 
     if len(files) == 0:
         print("No .swf.gz files found.")
@@ -176,7 +213,12 @@ def main():
 
         for num_groups in K_VALUES:
             for assignment_method in ASSIGNMENT_METHODS:
-                for seed in SEEDS:
+                seeds = (
+                    SEEDS
+                    if assignment_method in RANDOM_ASSIGNMENT_METHODS
+                    else [None]
+                )
+                for seed in seeds:
                     convert_one_file(
                         file_path,
                         workload_output_folder,
