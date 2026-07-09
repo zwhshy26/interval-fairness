@@ -28,7 +28,7 @@ FILENAME_RE = re.compile(
 )
 
 ALGORITHM_LABELS = {
-    "offline_greedy": "Offline Greedy",
+    "offline_greedy": "Global OPT",
     "offline_deterministic": "Offline Deterministic",
     "offline_randomized": "Offline Randomized",
     "simple_online_greedy": "Simple Online Greedy",
@@ -85,14 +85,13 @@ ALGORITHMS_BY_SETTING = {
         ("offline_randomized", "Randomized"),
     ],
     "online": [
-        ("simple_online_greedy", "Greedy"),
         ("online_randomized", "Randomized"),
         ("online_randomized_level_greedy", "CRS"),
     ],
 }
 
 OFFLINE_FAIRNESS_ALGORITHMS = [
-    ("offline_greedy", "Offline Optimal"),
+    ("offline_greedy", "Global OPT"),
     ("offline_deterministic", "Deterministic"),
     ("offline_randomized", "Randomized"),
 ]
@@ -108,7 +107,7 @@ RATIO_ALGORITHMS_BY_SETTING = {
     ],
 }
 
-EXCLUDED_PLOT_ALGORITHMS: set[str] = set()
+EXCLUDED_PLOT_ALGORITHMS: set[str] = {"simple_online_greedy"}
 
 METRICS = {
     "fairness": "Fairness Ratio",
@@ -148,8 +147,12 @@ def offline_approximation_ratio(delta: float, k: int) -> float:
     return safe_ratio(delta * k, denominator)
 
 
+def online_fairness_ratio(delta: float, k: int) -> float:
+    return k * math.log2(delta) / 2 if delta > 0 else math.nan
+
+
 def online_approximation_ratio(delta: float, k: int) -> float:
-    return k * math.log(delta) / 2 if delta > 0 else math.nan
+    return math.log2(delta) / 2 if delta > 0 else math.nan
 
 
 def compute_delta_from_input(input_file: str) -> float:
@@ -308,6 +311,7 @@ def aggregate_rows(rows: list[dict]) -> list[dict]:
                 "mean_delta": mean_delta,
                 "offline_fairness_ratio": offline_fairness_ratio(k),
                 "offline_approximation_ratio": offline_approximation_ratio(mean_delta, k),
+                "online_fairness_ratio": online_fairness_ratio(mean_delta, k),
                 "online_approximation_ratio": online_approximation_ratio(mean_delta, k),
             }
         )
@@ -335,6 +339,7 @@ def save_summary_csv(summary: list[dict], output_path: Path) -> None:
         "mean_delta",
         "offline_fairness_ratio",
         "offline_approximation_ratio",
+        "online_fairness_ratio",
         "online_approximation_ratio",
     ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
@@ -439,6 +444,8 @@ def theory_points_for_chart(
 
 
 def theory_ratio_key(setting: str, metric: str) -> str | None:
+    if metric == "fairness" and setting == "online":
+        return "online_fairness_ratio"
     if metric == "inverse_ratio" and setting == "offline":
         return "offline_approximation_ratio"
     if metric == "inverse_ratio" and setting == "online":
@@ -447,10 +454,12 @@ def theory_ratio_key(setting: str, metric: str) -> str | None:
 
 
 def theory_ratio_label(setting: str, metric: str) -> str | None:
+    if metric == "fairness" and setting == "online":
+        return "k*log2(delta)/2"
     if metric == "inverse_ratio" and setting == "offline":
         return "delta*k/(delta+k-1)"
     if metric == "inverse_ratio" and setting == "online":
-        return "k*log(delta)/2"
+        return "log2(delta)/2"
     return None
 
 
@@ -520,10 +529,18 @@ def save_offline_fairness_small_multiples(
     if not ci_values:
         return
 
-    y_min = max(1.0, min(ci_values) - max((max(ci_values) - min(ci_values)) * 0.10, 0.05))
-    y_max = max(ci_values) + max((max(ci_values) - min(ci_values)) * 0.10, 0.05)
+    log_scale = assignment_method == "containment_quantile"
+    if log_scale:
+        positive_ci_values = [value for value in ci_values if value > 0]
+        if not positive_ci_values:
+            return
+        y_min = max(min(positive_ci_values) * 0.82, 1e-12)
+        y_max = max(positive_ci_values) * 1.22
+    else:
+        y_min = max(1.0, min(ci_values) - max((max(ci_values) - min(ci_values)) * 0.10, 0.05))
+        y_max = max(ci_values) + max((max(ci_values) - min(ci_values)) * 0.10, 0.05)
     if y_max <= y_min:
-        y_max = y_min + 0.1
+        y_max = y_min * 1.1 if log_scale else y_min + 0.1
 
     fig, axes = plt.subplots(
         1,
@@ -534,6 +551,8 @@ def save_offline_fairness_small_multiples(
         sharey=True,
         constrained_layout=True,
     )
+    if len(algorithms) == 1:
+        axes = [axes]
 
     for panel_index, (ax, (algorithm, panel_title)) in enumerate(zip(axes, algorithms)):
         ax.set_axisbelow(True)
@@ -569,18 +588,15 @@ def save_offline_fairness_small_multiples(
                 zorder=2,
             )
 
-        ax.axhline(
-            1.0,
-            linestyle="--",
-            linewidth=1.0,
-            color="#6b7280",
-            alpha=0.55,
-            zorder=0,
-        )
         ax.set_xticks(list(range(2, 11)))
         ax.set_xlim(1.7, 10.3)
         ax.set_ylim(y_min, y_max)
-        ax.grid(True, alpha=0.22, linewidth=0.7)
+        if log_scale:
+            ax.set_yscale("log")
+        ax.set_title(panel_title, fontsize=11)
+        ax.grid(True, which="major", alpha=0.22, linewidth=0.7)
+        if log_scale:
+            ax.grid(True, which="minor", axis="y", alpha=0.10, linewidth=0.55)
         ax.tick_params(axis="both", labelsize=9)
         ax.set_xlabel("k", fontsize=10)
         if panel_index == 0:
@@ -659,14 +675,6 @@ def save_workload_fairness_grid(
             )
             if log_scale:
                 ax.set_yscale("log")
-            ax.axhline(
-                1.0,
-                linestyle="--",
-                linewidth=1.0,
-                color="#6b7280",
-                alpha=0.55,
-                zorder=0,
-            )
             if row_index == 0:
                 ax.set_title(label, fontsize=11)
             if column_index == 0:
@@ -766,6 +774,8 @@ def save_metric_small_multiples(
     title_prefix: str | None = None,
     lower_bound: float | None = None,
     algorithms: list[tuple[str, str]] | None = None,
+    theory_points: list[tuple[int, float]] | None = None,
+    theory_label: str | None = None,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     algorithms = algorithms or ALGORITHMS_BY_SETTING.get(setting, [])
@@ -782,11 +792,18 @@ def save_metric_small_multiples(
     ]
     if not ci_values:
         return
+    filtered_theory_points = [
+        (k, value)
+        for k, value in (theory_points or [])
+        if math.isfinite(value)
+    ]
+    theory_values = [value for _, value in filtered_theory_points]
+    y_values = ci_values + theory_values
 
-    y_min = min(ci_values) - max((max(ci_values) - min(ci_values)) * 0.10, 0.05)
+    y_min = min(y_values) - max((max(y_values) - min(y_values)) * 0.10, 0.05)
     if lower_bound is not None:
         y_min = max(lower_bound, y_min)
-    y_max = max(ci_values) + max((max(ci_values) - min(ci_values)) * 0.10, 0.05)
+    y_max = max(y_values) + max((max(y_values) - min(y_values)) * 0.10, 0.05)
     if y_max <= y_min:
         y_max = y_min + 0.1
 
@@ -816,14 +833,26 @@ def save_metric_small_multiples(
             panel_title,
             show_ci=True,
         )
+        if filtered_theory_points:
+            ax.plot(
+                [k for k, _ in filtered_theory_points],
+                [value for _, value in filtered_theory_points],
+                "--",
+                linewidth=1.8,
+                color="#111827",
+                label=theory_label or "Theory ratio",
+                zorder=1,
+            )
         ax.set_xticks(list(range(2, 11)))
         ax.set_xlim(1.7, 10.3)
         ax.set_ylim(y_min, y_max)
+        ax.set_title(panel_title, fontsize=11)
         ax.grid(True, alpha=0.22, linewidth=0.7)
         ax.tick_params(axis="both", labelsize=9)
         ax.set_xlabel("k", fontsize=10)
         if panel_index == 0:
             ax.set_ylabel(chart_y_label(metric_label, setting, metric), fontsize=10)
+        ax.legend(loc="best", frameon=False, fontsize=8)
 
     fig.savefig(output_path)
     plt.close(fig)
@@ -865,14 +894,7 @@ def save_length_quantile_offline_fairness_figure(
         ax.set_xticks(list(range(2, 11)))
         ax.set_xlim(1.7, 10.3)
         ax.set_xlabel("k", fontsize=10)
-        ax.axhline(
-            1.0,
-            linestyle="--",
-            linewidth=1.0,
-            color="#6b7280",
-            alpha=0.55,
-            zorder=0,
-        )
+        ax.set_title(panel_title, fontsize=11)
         ax.grid(True, which="major", alpha=0.23, linewidth=0.75)
         ax.grid(True, which="minor", axis="y", alpha=0.10, linewidth=0.55)
         ax.tick_params(axis="both", labelsize=9)
@@ -893,24 +915,111 @@ def save_length_quantile_offline_fairness_figure(
     plt.close(fig)
 
 
-def save_length_quantile_offline_fairness_detail(
+def save_offline_fairness_deterministic_randomized_detail(
     series: dict[str, list[tuple[int, float, float]]],
+    assignment_method: str,
     output_path: Path,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     algorithms = [
-        ("offline_deterministic", "Offline Deterministic"),
-        ("offline_randomized", "Offline Randomized"),
+        ("offline_deterministic", "Deterministic"),
+        ("offline_randomized", "Randomized"),
+    ]
+    log_scale = False
+    y_values = []
+
+    for algorithm, _ in algorithms:
+        for _, mean_value, ci95 in series.get(algorithm, []):
+            for value in (mean_value - ci95, mean_value, mean_value + ci95):
+                if math.isfinite(value) and (not log_scale or value > 0):
+                    y_values.append(value)
+
+    if not y_values:
+        return
+
+    if log_scale:
+        y_min = max(min(y_values) * 0.82, 1e-12)
+        y_max = max(y_values) * 1.22
+    else:
+        y_min = max(
+            1.0,
+            min(y_values) - max((max(y_values) - min(y_values)) * 0.12, 0.05),
+        )
+        y_max = max(y_values) + max((max(y_values) - min(y_values)) * 0.12, 0.05)
+    if y_max <= y_min:
+        y_max = y_min * 1.1 if log_scale else y_min + 0.1
+
+    fig, axes = plt.subplots(
+        1,
+        len(algorithms),
+        figsize=(max(3.2 * len(algorithms), 6.4), 3.1),
+        dpi=300,
+        sharex=True,
+        sharey=True,
+        constrained_layout=True,
+    )
+    if len(algorithms) == 1:
+        axes = [axes]
+
+    for panel_index, (ax, (algorithm, panel_title)) in enumerate(zip(axes, algorithms)):
+        ax.set_axisbelow(True)
+        points = _finite_fairness_points(series, algorithm)
+        _plot_mean_with_ci_band(
+            ax,
+            points,
+            algorithm,
+            panel_title,
+            log_scale=log_scale,
+            show_ci=True,
+        )
+        ax.set_ylim(y_min, y_max)
+        if log_scale:
+            ax.set_yscale("log")
+        ax.set_xticks(list(range(2, 11)))
+        ax.set_xlim(1.7, 10.3)
+        ax.set_xlabel("k", fontsize=10)
+        ax.set_title(panel_title, fontsize=11)
+        ax.grid(True, which="major", alpha=0.23, linewidth=0.75)
+        if log_scale:
+            ax.grid(True, which="minor", axis="y", alpha=0.10, linewidth=0.55)
+        ax.tick_params(axis="both", labelsize=9)
+        if panel_index == 0:
+            ax.set_ylabel(
+                r"Fairness Ratio ($\max_g\ \mathrm{OPT}_g / \mathrm{ALG}_g$)",
+                fontsize=10,
+            )
+
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
+def save_assignment_method_fairness_comparison(
+    series_by_assignment_method: dict[str, dict[str, list[tuple[int, float, float]]]],
+    algorithm: str,
+    algorithm_label: str,
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    assignment_methods = [
+        ("length_quantile", "Length Quantile", "#16a34a", "o", -0.04),
+        ("containment_quantile", "Containment Quantile", "#f97316", "^", 0.04),
     ]
     fig, ax = plt.subplots(figsize=(6.2, 3.6), dpi=300, constrained_layout=True)
     empirical_y_values = []
 
-    for algorithm, label in algorithms:
-        points = _finite_fairness_points(series, algorithm)
+    for assignment_method, label, color, marker, offset in assignment_methods:
+        points = [
+            (k, mean_value, ci95)
+            for k, mean_value, ci95 in series_by_assignment_method
+            .get(assignment_method, {})
+            .get(algorithm, [])
+            if math.isfinite(mean_value) and math.isfinite(ci95)
+        ]
         if not points:
             continue
-        offset = ALGORITHM_X_OFFSETS.get(algorithm, 0.0)
+
         x_values = [k + offset for k, _, _ in points]
         mean_values = [mean_value for _, mean_value, _ in points]
         ci_values = [ci95 for _, _, ci95 in points]
@@ -920,8 +1029,6 @@ def save_length_quantile_offline_fairness_detail(
             for value in (mean_value - ci95, mean_value + ci95)
             if math.isfinite(value)
         )
-        color = ALGORITHM_COLORS.get(algorithm, "#2563eb")
-        marker = ALGORITHM_MARKERS.get(algorithm, "o")
         errorbar = ax.errorbar(
             x_values,
             mean_values,
@@ -943,25 +1050,25 @@ def save_length_quantile_offline_fairness_detail(
             barline_collection.set_alpha(0.45)
 
     if empirical_y_values:
-        y_min = max(1.0, min(empirical_y_values) - max((max(empirical_y_values) - min(empirical_y_values)) * 0.12, 0.05))
-        y_max = max(empirical_y_values) + max((max(empirical_y_values) - min(empirical_y_values)) * 0.12, 0.05)
+        y_min = max(
+            1.0,
+            min(empirical_y_values)
+            - max((max(empirical_y_values) - min(empirical_y_values)) * 0.12, 0.05),
+        )
+        y_max = max(empirical_y_values) + max(
+            (max(empirical_y_values) - min(empirical_y_values)) * 0.12,
+            0.05,
+        )
         if y_max <= y_min:
             y_max = y_min + 0.1
         ax.set_ylim(y_min, y_max)
 
-    ax.axhline(
-        1.0,
-        linestyle="--",
-        linewidth=1.0,
-        color="#6b7280",
-        alpha=0.62,
-        zorder=0,
-    )
     ax.set_xlabel("k", fontsize=10)
     ax.set_ylabel(
         r"Fairness Ratio ($\max_g\ \mathrm{OPT}_g / \mathrm{ALG}_g$)",
         fontsize=10,
     )
+    ax.set_title(algorithm_label, fontsize=11)
     ax.set_xticks(list(range(2, 11)))
     ax.set_xlim(1.7, 10.3)
     ax.grid(True, alpha=0.24, linewidth=0.75)
@@ -982,36 +1089,55 @@ def save_line_chart(
     lower_bound: float | None = None,
     optimal_reference: bool = False,
     x_ticks: list[int] | None = None,
+    log_scale: bool = False,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
     all_k_values = sorted({x for points in series.values() for x, _, _ in points})
     empirical_y_values = []
+    positive_floor = lower_bound if lower_bound and lower_bound > 0 else 1e-12
 
     for algorithm, points in series.items():
         filtered_points = [
             (x, y, ci95)
             for x, y, ci95 in points
-            if math.isfinite(y) and math.isfinite(ci95)
+            if math.isfinite(y)
+            and math.isfinite(ci95)
+            and (not log_scale or y > 0)
         ]
         if not filtered_points:
             continue
         offset = ALGORITHM_X_OFFSETS.get(algorithm, 0.0)
         x_values = [x + offset for x, _, _ in filtered_points]
         y_values = [y for _, y, _ in filtered_points]
-        ci_values = [ci95 for _, _, ci95 in filtered_points]
-        empirical_y_values.extend(
-            value
-            for _, y, ci95 in filtered_points
-            for value in (y - ci95, y + ci95)
-            if math.isfinite(value)
-        )
+        if log_scale:
+            lower_values = [max(y - ci95, positive_floor) for _, y, ci95 in filtered_points]
+            upper_values = [y + ci95 for _, y, ci95 in filtered_points]
+            yerr = [
+                [y - lower for y, lower in zip(y_values, lower_values)],
+                [upper - y for y, upper in zip(y_values, upper_values)],
+            ]
+            empirical_y_values.extend(
+                value
+                for lower, y, upper in zip(lower_values, y_values, upper_values)
+                for value in (lower, y, upper)
+                if math.isfinite(value) and value > 0
+            )
+        else:
+            ci_values = [ci95 for _, _, ci95 in filtered_points]
+            yerr = ci_values
+            empirical_y_values.extend(
+                value
+                for _, y, ci95 in filtered_points
+                for value in (y - ci95, y + ci95)
+                if math.isfinite(value)
+            )
         color = ALGORITHM_COLORS.get(algorithm)
         marker = ALGORITHM_MARKERS.get(algorithm, "o")
         errorbar = ax.errorbar(
             x_values,
             y_values,
-            yerr=ci_values,
+            yerr=yerr,
             fmt="-",
             marker=marker,
             linewidth=2.4,
@@ -1030,11 +1156,14 @@ def save_line_chart(
 
     if theory_points:
         filtered_theory_points = [
-            (x, y) for x, y in theory_points if math.isfinite(y)
+            (x, y)
+            for x, y in theory_points
+            if math.isfinite(y) and (not log_scale or y > 0)
         ]
         if filtered_theory_points:
             x_values = [x for x, _ in filtered_theory_points]
             y_values = [y for _, y in filtered_theory_points]
+            empirical_y_values.extend(y_values)
             ax.plot(
                 x_values,
                 y_values,
@@ -1058,9 +1187,21 @@ def save_line_chart(
     ax.set_ylabel(y_label, fontsize=11)
     ax.set_xticks(x_ticks if x_ticks is not None else all_k_values)
     ax.tick_params(axis="both", labelsize=10)
+    if log_scale:
+        ax.set_yscale("log")
     ax.grid(True, alpha=0.25, linewidth=0.8)
+    if log_scale:
+        ax.grid(True, which="minor", axis="y", alpha=0.10, linewidth=0.55)
 
-    if zoom_to_empirical and empirical_y_values:
+    if log_scale and empirical_y_values:
+        positive_values = [value for value in empirical_y_values if value > 0]
+        if positive_values:
+            y_min = max(min(positive_values) * 0.82, positive_floor)
+            y_max = max(positive_values) * 1.22
+            if y_max <= y_min:
+                y_max = y_min * 1.1
+            ax.set_ylim(y_min, y_max)
+    elif zoom_to_empirical and empirical_y_values:
         empirical_min = min(empirical_y_values)
         empirical_max = max(empirical_y_values)
         data_range = empirical_max - empirical_min
@@ -1111,19 +1252,31 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                         output_path=output_path,
                     )
                     chart_paths.append(output_path)
-                    if assignment_method == "length_quantile":
+                    if assignment_method in {"containment_quantile", "length_quantile"}:
                         detail_output_path = (
                             output_dir
-                            / "length_quantile_offline_fairness_deterministic_randomized_by_k.png"
+                            / f"{assignment_method}_offline_fairness_deterministic_randomized_by_k.png"
                         )
-                        save_length_quantile_offline_fairness_detail(
+                        save_offline_fairness_deterministic_randomized_detail(
                             series=series,
+                            assignment_method=assignment_method,
                             output_path=detail_output_path,
                         )
                         chart_paths.append(detail_output_path)
                     continue
 
                 if metric == "inverse_ratio":
+                    theory_points = (
+                        theory_points_for_chart(
+                            summary,
+                            assignment_method,
+                            setting,
+                            metric,
+                        )
+                        if setting == "online"
+                        else None
+                    )
+                    theory_label = theory_ratio_label(setting, metric) if setting == "online" else None
                     save_metric_small_multiples(
                         series=series,
                         assignment_method=assignment_method,
@@ -1133,6 +1286,8 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                         output_path=output_path,
                         lower_bound=1.0,
                         algorithms=RATIO_ALGORITHMS_BY_SETTING.get(setting),
+                        theory_points=theory_points,
+                        theory_label=theory_label,
                     )
                     chart_paths.append(output_path)
                     continue
@@ -1145,6 +1300,11 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                 )
                 theory_label = theory_ratio_label(setting, metric)
                 is_offline_fairness = setting == "offline" and metric == "fairness"
+                use_log_scale = (
+                    assignment_method == "containment_quantile"
+                    and setting == "online"
+                    and metric == "fairness"
+                )
                 save_line_chart(
                     series=series,
                     title=chart_title(label, assignment_method, setting, metric),
@@ -1153,9 +1313,10 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                     theory_points=theory_points,
                     theory_label=theory_label,
                     zoom_to_empirical=is_offline_fairness,
-                    lower_bound=1.0 if is_offline_fairness else None,
+                    lower_bound=1.0 if is_offline_fairness or use_log_scale else None,
                     optimal_reference=False,
                     x_ticks=list(range(2, 11)) if is_offline_fairness else None,
+                    log_scale=use_log_scale,
                 )
                 chart_paths.append(output_path)
 
@@ -1195,6 +1356,35 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                 output_path=output_path,
             )
             chart_paths.append(output_path)
+    comparison_series = {
+        assignment_method: points_for_chart(
+            summary,
+            assignment_method,
+            setting="offline",
+            metric="fairness",
+        )
+        for assignment_method in ["length_quantile", "containment_quantile"]
+    }
+    for algorithm, algorithm_label, output_name in [
+        (
+            "offline_deterministic",
+            "Offline Deterministic",
+            "length_containment_offline_deterministic_fairness_by_k.png",
+        ),
+        (
+            "offline_randomized",
+            "Offline Randomized",
+            "length_containment_offline_randomized_fairness_by_k.png",
+        ),
+    ]:
+        output_path = output_dir / output_name
+        save_assignment_method_fairness_comparison(
+            series_by_assignment_method=comparison_series,
+            algorithm=algorithm,
+            algorithm_label=algorithm_label,
+            output_path=output_path,
+        )
+        chart_paths.append(output_path)
     return chart_paths
 
 
