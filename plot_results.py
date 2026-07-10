@@ -108,6 +108,11 @@ RATIO_ALGORITHMS_BY_SETTING = {
 }
 
 EXCLUDED_PLOT_ALGORITHMS: set[str] = {"simple_online_greedy"}
+RANDOMIZED_ALGORITHMS: set[str] = {
+    "offline_randomized",
+    "online_randomized",
+    "online_randomized_level_greedy",
+}
 
 METRICS = {
     "fairness": "Fairness Ratio",
@@ -117,6 +122,14 @@ METRICS = {
 }
 
 CI_BAND_ALPHA = 0.22
+
+OFFLINE_APPROXIMATION_RATIO_PANELS = [
+    ("uniform", "Uniform"),
+    ("exponential", "Exponential"),
+    ("length_quantile", "Length-Based"),
+    ("length_delta", "Length-Delta"),
+    ("containment_quantile", "Containment-Based"),
+]
 
 
 DELTA_CACHE = {}
@@ -148,11 +161,11 @@ def offline_approximation_ratio(delta: float, k: int) -> float:
 
 
 def online_fairness_ratio(delta: float, k: int) -> float:
-    return k * math.log2(delta) / 2 if delta > 0 else math.nan
+    return 3 * k * math.log2(delta) if delta > 0 else math.nan
 
 
 def online_approximation_ratio(delta: float, k: int) -> float:
-    return math.log2(delta) / 2 if delta > 0 else math.nan
+    return 3 * k * math.log2(delta) if delta > 0 else math.nan
 
 
 def compute_delta_from_input(input_file: str) -> float:
@@ -213,6 +226,38 @@ def mean_and_ci95(values) -> tuple[float, float]:
     return sample_mean, critical_value * standard_error
 
 
+def mean_and_minmax_error(values) -> tuple[float, tuple[float, float]]:
+    cleaned = finite_values(values)
+    if not cleaned:
+        return math.nan, (math.nan, math.nan)
+
+    sample_mean = mean(cleaned)
+    return sample_mean, (sample_mean - min(cleaned), max(cleaned) - sample_mean)
+
+
+def interval_bounds(mean_value: float, interval) -> tuple[float, float]:
+    if isinstance(interval, tuple):
+        lower_error, upper_error = interval
+    else:
+        lower_error = interval
+        upper_error = interval
+    return mean_value - lower_error, mean_value + upper_error
+
+
+def interval_yerr(intervals) -> list[list[float]]:
+    lower_errors = []
+    upper_errors = []
+    for interval in intervals:
+        if isinstance(interval, tuple):
+            lower_error, upper_error = interval
+        else:
+            lower_error = interval
+            upper_error = interval
+        lower_errors.append(lower_error)
+        upper_errors.append(upper_error)
+    return [lower_errors, upper_errors]
+
+
 def parse_input_metadata(input_file: str) -> dict:
     parts = [part for part in re.split(r"[\\/]+", input_file) if part]
     filename = parts[-1] if parts else Path(input_file).name
@@ -265,6 +310,23 @@ def load_results(path: str) -> list[dict]:
     return rows
 
 
+def filter_rows_by_workload(rows: list[dict], workload: str | None) -> list[dict]:
+    if workload is None:
+        return rows
+
+    filtered = [
+        row
+        for row in rows
+        if row["workload"] == workload
+    ]
+    if not filtered:
+        available = ", ".join(sorted({row["workload"] for row in rows}))
+        raise ValueError(
+            f"No rows found for workload {workload!r}. Available workloads: {available}"
+        )
+    return filtered
+
+
 def aggregate_rows(rows: list[dict]) -> list[dict]:
     grouped = defaultdict(list)
     for row in rows:
@@ -279,11 +341,19 @@ def aggregate_rows(rows: list[dict]) -> list[dict]:
     summary = []
     for (workload, assignment_method, k, algorithm), items in sorted(grouped.items()):
         # First-stage aggregation: within one workload, average across
-        # group-assignment seeds. The ci95_* values here describe seed-level
-        # variation for that workload and are kept for the summary CSV, but
-        # they are not the uncertainty bands used in the main aggregated plots.
+        # group-assignment seeds. Deterministic fairness keeps the existing
+        # seed-level CI; randomized fairness stores a min/max range instead.
         mean_selected, ci95_selected = mean_and_ci95(row["selected"] for row in items)
-        mean_fairness, ci95_fairness = mean_and_ci95(row["fairness"] for row in items)
+        if algorithm in RANDOMIZED_ALGORITHMS:
+            mean_fairness, fairness_minmax_error = mean_and_minmax_error(
+                row["fairness"] for row in items
+            )
+            ci95_fairness = math.nan
+        else:
+            mean_fairness, ci95_fairness = mean_and_ci95(
+                row["fairness"] for row in items
+            )
+            fairness_minmax_error = (ci95_fairness, ci95_fairness)
         mean_fraction_opt, ci95_fraction_opt = mean_and_ci95(
             row["fraction_opt"] for row in items
         )
@@ -304,6 +374,7 @@ def aggregate_rows(rows: list[dict]) -> list[dict]:
                 "ci95_selected": ci95_selected,
                 "mean_fairness": mean_fairness,
                 "ci95_fairness": ci95_fairness,
+                "fairness_minmax_error": fairness_minmax_error,
                 "mean_fraction_opt": mean_fraction_opt,
                 "ci95_fraction_opt": ci95_fraction_opt,
                 "mean_inverse_ratio": mean_inverse_ratio,
@@ -343,7 +414,7 @@ def save_summary_csv(summary: list[dict], output_path: Path) -> None:
         "online_approximation_ratio",
     ]
     with output_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(summary)
 
@@ -355,6 +426,7 @@ def points_for_chart(
     metric: str,
 ) -> dict:
     values_by_algorithm_k = defaultdict(list)
+    bounds_by_algorithm_k = defaultdict(list)
     metric_key = f"mean_{metric}"
 
     for row in summary:
@@ -365,14 +437,36 @@ def points_for_chart(
         if row["setting"] != setting:
             continue
         values_by_algorithm_k[(row["algorithm"], row["k"])].append(row[metric_key])
+        if metric == "fairness" and row["algorithm"] in RANDOMIZED_ALGORITHMS:
+            bounds_by_algorithm_k[(row["algorithm"], row["k"])].append(
+                interval_bounds(row[metric_key], row["fairness_minmax_error"])
+            )
 
     series = defaultdict(list)
     for (algorithm, k), values in values_by_algorithm_k.items():
-        # Main-figure aggregation: compute the plotted mean and CI across
+        # Main-figure aggregation: compute the plotted mean and min/max range across
         # workload-level means from aggregate_rows(). This preserves workloads
         # as the independent units instead of flattening workload x seed rows.
-        point_mean, point_ci95 = mean_and_ci95(values)
-        series[algorithm].append((k, point_mean, point_ci95))
+        if metric == "fairness" and algorithm in RANDOMIZED_ALGORITHMS:
+            cleaned_values = finite_values(values)
+            point_mean = mean(cleaned_values) if cleaned_values else math.nan
+            finite_bounds = [
+                (lower, upper)
+                for lower, upper in bounds_by_algorithm_k[(algorithm, k)]
+                if math.isfinite(lower) and math.isfinite(upper)
+            ]
+            if finite_bounds:
+                lower_bound = min(lower for lower, _ in finite_bounds)
+                upper_bound = max(upper for _, upper in finite_bounds)
+                point_minmax_error = (
+                    max(point_mean - lower_bound, 0.0),
+                    max(upper_bound - point_mean, 0.0),
+                )
+            else:
+                point_minmax_error = (math.nan, math.nan)
+        else:
+            point_mean, point_minmax_error = mean_and_minmax_error(values)
+        series[algorithm].append((k, point_mean, point_minmax_error))
 
     return {
         algorithm: sorted(points)
@@ -403,9 +497,12 @@ def points_for_workload_chart(
             continue
         if row["setting"] != setting:
             continue
-        series[row["algorithm"]].append(
-            (row["k"], row[metric_key], row[ci_key])
+        interval = (
+            row["fairness_minmax_error"]
+            if metric == "fairness" and row["algorithm"] in RANDOMIZED_ALGORITHMS
+            else row[ci_key]
         )
+        series[row["algorithm"]].append((row["k"], row[metric_key], interval))
 
     return {
         algorithm: sorted(points)
@@ -455,15 +552,37 @@ def theory_ratio_key(setting: str, metric: str) -> str | None:
 
 def theory_ratio_label(setting: str, metric: str) -> str | None:
     if metric == "fairness" and setting == "online":
-        return "k*log2(delta)/2"
+        return r"$3k\log_2(\Delta)$"
     if metric == "inverse_ratio" and setting == "offline":
-        return "delta*k/(delta+k-1)"
+        return r"$\Delta k/(\Delta+k-1)$"
     if metric == "inverse_ratio" and setting == "online":
-        return "log2(delta)/2"
+        return r"$3k\log_2(\Delta)$"
     return None
 
 
+def online_competitive_ratio_label(
+    theory_points: list[tuple[int, float]],
+) -> str:
+    values = [
+        value
+        for _, value in theory_points
+        if math.isfinite(value)
+    ]
+    if not values:
+        return r"$3k\log_2(\Delta)$"
+
+    approx_value = mean(values)
+    return rf"$3k\log_2(\Delta)\approx {approx_value:.2f}$"
+
+
 def format_assignment_method(value: str) -> str:
+    labels = {
+        "length_delta": "Length-Delta",
+        "length_quantile": "Length Quantile",
+        "containment_quantile": "Containment Quantile",
+    }
+    if value in labels:
+        return labels[value]
     return value.replace("_", " ").title()
 
 
@@ -487,7 +606,7 @@ def chart_title(metric_label: str, assignment_method: str, setting: str, metric:
         return f"Approximation Ratio under {method_label} Group Assignment"
     if setting == "online" and metric == "inverse_ratio":
         return f"Competitive Ratio under {method_label} Group Assignment"
-    return f"{metric_label} by k ({assignment_method}, {setting}, mean +/- 95% CI)"
+    return f"{metric_label} by k ({assignment_method}, {setting}, mean with min-max range)"
 
 
 def chart_y_label(metric_label: str, setting: str, metric: str) -> str:
@@ -522,8 +641,8 @@ def save_offline_fairness_small_multiples(
         value
         for algorithm, _ in algorithms
         if algorithm in series
-        for _, mean_value, ci95 in series[algorithm]
-        for value in (mean_value - ci95, mean_value + ci95)
+        for _, mean_value, interval in series[algorithm]
+        for value in interval_bounds(mean_value, interval)
         if math.isfinite(value)
     ]
     if not ci_values:
@@ -560,15 +679,16 @@ def save_offline_fairness_small_multiples(
         marker = ALGORITHM_MARKERS.get(algorithm, "o")
 
         points = [
-            (k, mean_value, ci95)
-            for k, mean_value, ci95 in series[algorithm]
-            if math.isfinite(mean_value) and math.isfinite(ci95)
+            (k, mean_value, interval)
+            for k, mean_value, interval in series[algorithm]
+            if math.isfinite(mean_value)
         ]
         if points:
             x_values = [k for k, _, _ in points]
             mean_values = [mean_value for _, mean_value, _ in points]
-            lower_values = [mean_value - ci95 for _, mean_value, ci95 in points]
-            upper_values = [mean_value + ci95 for _, mean_value, ci95 in points]
+            bounds = [interval_bounds(mean_value, interval) for _, mean_value, interval in points]
+            lower_values = [lower for lower, _ in bounds]
+            upper_values = [upper for _, upper in bounds]
             ax.fill_between(
                 x_values,
                 lower_values,
@@ -626,8 +746,9 @@ def save_workload_fairness_grid(
     for workload in workloads:
         series = series_by_workload[workload]
         for algorithm, _ in algorithms:
-            for _, mean_value, ci95 in series.get(algorithm, []):
-                for value in (mean_value - ci95, mean_value, mean_value + ci95):
+            for _, mean_value, interval in series.get(algorithm, []):
+                lower, upper = interval_bounds(mean_value, interval)
+                for value in (lower, mean_value, upper):
                     if math.isfinite(value) and (not log_scale or value > 0):
                         y_values.append(value)
 
@@ -661,9 +782,9 @@ def save_workload_fairness_grid(
             ax = axes[row_index][column_index]
             ax.set_axisbelow(True)
             points = [
-                (k, mean_value, ci95)
-                for k, mean_value, ci95 in series.get(algorithm, [])
-                if math.isfinite(mean_value) and math.isfinite(ci95)
+                (k, mean_value, interval)
+                for k, mean_value, interval in series.get(algorithm, [])
+                if math.isfinite(mean_value)
             ]
             _plot_mean_with_ci_band(
                 ax,
@@ -699,12 +820,12 @@ def _finite_fairness_points(
     require_positive_mean: bool = False,
 ) -> list[tuple[int, float, float]]:
     points = []
-    for k, mean_value, ci95 in series.get(algorithm, []):
-        if not (math.isfinite(mean_value) and math.isfinite(ci95)):
+    for k, mean_value, interval in series.get(algorithm, []):
+        if not math.isfinite(mean_value):
             continue
         if require_positive_mean and mean_value <= 0:
             continue
-        points.append((k, mean_value, ci95))
+        points.append((k, mean_value, interval))
     return points
 
 
@@ -729,11 +850,12 @@ def _plot_mean_with_ci_band(
     band_points = []
     if show_ci:
         band_points = [
-            (k, mean_value - ci95, mean_value + ci95)
-            for k, mean_value, ci95 in points
-            if math.isfinite(mean_value - ci95)
-            and math.isfinite(mean_value + ci95)
-            and (not log_scale or mean_value - ci95 > 0)
+            (k, lower, upper)
+            for k, mean_value, interval in points
+            for lower, upper in [interval_bounds(mean_value, interval)]
+            if math.isfinite(lower)
+            and math.isfinite(upper)
+            and (not log_scale or lower > 0)
         ]
     if band_points:
         band_x = [k for k, _, _ in band_points]
@@ -786,8 +908,8 @@ def save_metric_small_multiples(
         value
         for algorithm, _ in algorithms
         if algorithm in series
-        for _, mean_value, ci95 in series[algorithm]
-        for value in (mean_value - ci95, mean_value + ci95)
+        for _, mean_value, interval in series[algorithm]
+        for value in interval_bounds(mean_value, interval)
         if math.isfinite(value)
     ]
     if not ci_values:
@@ -822,9 +944,9 @@ def save_metric_small_multiples(
     for panel_index, (ax, (algorithm, panel_title)) in enumerate(zip(axes, algorithms)):
         ax.set_axisbelow(True)
         points = [
-            (k, mean_value, ci95)
-            for k, mean_value, ci95 in series.get(algorithm, [])
-            if math.isfinite(mean_value) and math.isfinite(ci95)
+            (k, mean_value, interval)
+            for k, mean_value, interval in series.get(algorithm, [])
+            if math.isfinite(mean_value)
         ]
         _plot_mean_with_ci_band(
             ax,
@@ -834,13 +956,18 @@ def save_metric_small_multiples(
             show_ci=True,
         )
         if filtered_theory_points:
+            plotted_theory_label = (
+                online_competitive_ratio_label(filtered_theory_points)
+                if setting == "online" and metric == "inverse_ratio"
+                else theory_label or "Theory ratio"
+            )
             ax.plot(
                 [k for k, _ in filtered_theory_points],
                 [value for _, value in filtered_theory_points],
                 "--",
                 linewidth=1.8,
                 color="#111827",
-                label=theory_label or "Theory ratio",
+                label=plotted_theory_label,
                 zorder=1,
             )
         ax.set_xticks(list(range(2, 11)))
@@ -855,6 +982,137 @@ def save_metric_small_multiples(
         ax.legend(loc="best", frameon=False, fontsize=8)
 
     fig.savefig(output_path)
+    plt.close(fig)
+
+
+def plot_offline_approximation_ratio_panel(
+    ax,
+    summary: list[dict],
+    assignment_method: str,
+    panel_title: str,
+) -> list[float]:
+    series = points_for_chart(
+        summary,
+        assignment_method=assignment_method,
+        setting="offline",
+        metric="inverse_ratio",
+    )
+    plotted_y_values = []
+
+    ax.set_axisbelow(True)
+    for algorithm, label in RATIO_ALGORITHMS_BY_SETTING["offline"]:
+        points = [
+            (k, mean_value)
+            for k, mean_value, _ in series.get(algorithm, [])
+            if math.isfinite(mean_value)
+        ]
+        if not points:
+            continue
+
+        color = {
+            "offline_deterministic": "#1f77b4",
+            "offline_randomized": "#d62728",
+        }.get(algorithm, ALGORITHM_COLORS.get(algorithm, "#2563eb"))
+        marker = ALGORITHM_MARKERS.get(algorithm, "o")
+        offset = -0.16 if algorithm == "offline_deterministic" else 0.16
+        x_values = [k + offset for k, _ in points]
+        mean_values = [mean_value for _, mean_value in points]
+        ax.plot(
+            x_values,
+            mean_values,
+            f"-{marker}",
+            color=color,
+            linewidth=2.3,
+            markersize=5.2,
+            label=label,
+            zorder=2,
+        )
+        plotted_y_values.extend(mean_values)
+
+    ax.set_title(panel_title, fontsize=11)
+    ax.set_xticks(list(range(2, 11)))
+    ax.set_xlim(1.7, 10.3)
+    ax.grid(True, alpha=0.22, linewidth=0.7)
+    ax.tick_params(axis="both", labelsize=9)
+    return [
+        value
+        for value in plotted_y_values
+        if math.isfinite(value)
+    ]
+
+
+def save_offline_approximation_ratio_4panel(
+    summary: list[dict],
+    output_path: Path,
+) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=(7.4, 5.8),
+        dpi=300,
+        sharex=True,
+        sharey=False,
+        constrained_layout=False,
+    )
+    fig.subplots_adjust(
+        left=0.11,
+        right=0.98,
+        bottom=0.11,
+        top=0.84,
+        hspace=0.34,
+        wspace=0.18,
+    )
+
+    y_values_by_row = [[], []]
+    for ax, (assignment_method, panel_title) in zip(
+        axes.ravel(),
+        OFFLINE_APPROXIMATION_RATIO_PANELS,
+    ):
+        panel_y_values = (
+            plot_offline_approximation_ratio_panel(
+                ax,
+                summary=summary,
+                assignment_method=assignment_method,
+                panel_title=panel_title,
+            )
+        )
+        row_index = 0 if assignment_method in {"uniform", "exponential"} else 1
+        y_values_by_row[row_index].extend(panel_y_values)
+
+    for row_index, row_y_values in enumerate(y_values_by_row):
+        if not row_y_values:
+            continue
+        y_min = max(
+            1.0,
+            min(row_y_values)
+            - max((max(row_y_values) - min(row_y_values)) * 0.06, 0.03),
+        )
+        y_max = max(row_y_values) + max(
+            (max(row_y_values) - min(row_y_values)) * 0.06,
+            0.03,
+        )
+        if y_max <= y_min:
+            y_max = y_min + 0.1
+        for ax in axes[row_index]:
+            ax.set_ylim(y_min, y_max)
+
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    if handles:
+        fig.legend(
+            handles,
+            labels,
+            loc="upper center",
+            bbox_to_anchor=(0.5, 0.98),
+            ncol=len(handles),
+            frameon=False,
+            fontsize=10,
+        )
+
+    fig.supxlabel("k", fontsize=10, y=0.035)
+    fig.supylabel("Approximation Ratio", fontsize=10, x=0.035)
+    fig.savefig(output_path, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -930,8 +1188,9 @@ def save_offline_fairness_deterministic_randomized_detail(
     y_values = []
 
     for algorithm, _ in algorithms:
-        for _, mean_value, ci95 in series.get(algorithm, []):
-            for value in (mean_value - ci95, mean_value, mean_value + ci95):
+        for _, mean_value, interval in series.get(algorithm, []):
+            lower, upper = interval_bounds(mean_value, interval)
+            for value in (lower, mean_value, upper):
                 if math.isfinite(value) and (not log_scale or value > 0):
                     y_values.append(value)
 
@@ -1011,28 +1270,28 @@ def save_assignment_method_fairness_comparison(
 
     for assignment_method, label, color, marker, offset in assignment_methods:
         points = [
-            (k, mean_value, ci95)
-            for k, mean_value, ci95 in series_by_assignment_method
+            (k, mean_value, interval)
+            for k, mean_value, interval in series_by_assignment_method
             .get(assignment_method, {})
             .get(algorithm, [])
-            if math.isfinite(mean_value) and math.isfinite(ci95)
+            if math.isfinite(mean_value)
         ]
         if not points:
             continue
 
         x_values = [k + offset for k, _, _ in points]
         mean_values = [mean_value for _, mean_value, _ in points]
-        ci_values = [ci95 for _, _, ci95 in points]
+        intervals = [interval for _, _, interval in points]
         empirical_y_values.extend(
             value
-            for _, mean_value, ci95 in points
-            for value in (mean_value - ci95, mean_value + ci95)
+            for _, mean_value, interval in points
+            for value in interval_bounds(mean_value, interval)
             if math.isfinite(value)
         )
         errorbar = ax.errorbar(
             x_values,
             mean_values,
-            yerr=ci_values,
+            yerr=interval_yerr(intervals),
             fmt=f"-{marker}",
             linewidth=2.2,
             elinewidth=0.9,
@@ -1090,6 +1349,7 @@ def save_line_chart(
     optimal_reference: bool = False,
     x_ticks: list[int] | None = None,
     log_scale: bool = False,
+    show_ci: bool = True,
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
@@ -1099,10 +1359,9 @@ def save_line_chart(
 
     for algorithm, points in series.items():
         filtered_points = [
-            (x, y, ci95)
-            for x, y, ci95 in points
+            (x, y, interval)
+            for x, y, interval in points
             if math.isfinite(y)
-            and math.isfinite(ci95)
             and (not log_scale or y > 0)
         ]
         if not filtered_points:
@@ -1110,9 +1369,12 @@ def save_line_chart(
         offset = ALGORITHM_X_OFFSETS.get(algorithm, 0.0)
         x_values = [x + offset for x, _, _ in filtered_points]
         y_values = [y for _, y, _ in filtered_points]
-        if log_scale:
-            lower_values = [max(y - ci95, positive_floor) for _, y, ci95 in filtered_points]
-            upper_values = [y + ci95 for _, y, ci95 in filtered_points]
+        if not show_ci:
+            empirical_y_values.extend(y_values)
+        elif log_scale:
+            bounds = [interval_bounds(y, interval) for _, y, interval in filtered_points]
+            lower_values = [max(lower, positive_floor) for lower, _ in bounds]
+            upper_values = [upper for _, upper in bounds]
             yerr = [
                 [y - lower for y, lower in zip(y_values, lower_values)],
                 [upper - y for y, upper in zip(y_values, upper_values)],
@@ -1124,35 +1386,47 @@ def save_line_chart(
                 if math.isfinite(value) and value > 0
             )
         else:
-            ci_values = [ci95 for _, _, ci95 in filtered_points]
-            yerr = ci_values
+            intervals = [interval for _, _, interval in filtered_points]
+            yerr = interval_yerr(intervals)
             empirical_y_values.extend(
                 value
-                for _, y, ci95 in filtered_points
-                for value in (y - ci95, y + ci95)
+                for _, y, interval in filtered_points
+                for value in interval_bounds(y, interval)
                 if math.isfinite(value)
             )
         color = ALGORITHM_COLORS.get(algorithm)
         marker = ALGORITHM_MARKERS.get(algorithm, "o")
-        errorbar = ax.errorbar(
-            x_values,
-            y_values,
-            yerr=yerr,
-            fmt="-",
-            marker=marker,
-            linewidth=2.4,
-            elinewidth=1.2,
-            markersize=4,
-            capsize=4,
-            capthick=1.2,
-            color=color,
-            ecolor=color,
-            label=ALGORITHM_LABELS.get(algorithm, algorithm),
-        )
-        for capline in errorbar[1]:
-            capline.set_alpha(0.55)
-        for barline_collection in errorbar[2]:
-            barline_collection.set_alpha(0.45)
+        if show_ci:
+            errorbar = ax.errorbar(
+                x_values,
+                y_values,
+                yerr=yerr,
+                fmt="-",
+                marker=marker,
+                linewidth=2.4,
+                elinewidth=1.2,
+                markersize=4,
+                capsize=4,
+                capthick=1.2,
+                color=color,
+                ecolor=color,
+                label=ALGORITHM_LABELS.get(algorithm, algorithm),
+            )
+            for capline in errorbar[1]:
+                capline.set_alpha(0.55)
+            for barline_collection in errorbar[2]:
+                barline_collection.set_alpha(0.45)
+        else:
+            ax.plot(
+                x_values,
+                y_values,
+                "-",
+                marker=marker,
+                linewidth=2.4,
+                markersize=4,
+                color=color,
+                label=ALGORITHM_LABELS.get(algorithm, algorithm),
+            )
 
     if theory_points:
         filtered_theory_points = [
@@ -1300,23 +1574,37 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
                 )
                 theory_label = theory_ratio_label(setting, metric)
                 is_offline_fairness = setting == "offline" and metric == "fairness"
+                is_online_fairness = setting == "online" and metric == "fairness"
                 use_log_scale = (
                     assignment_method == "containment_quantile"
                     and setting == "online"
                     and metric == "fairness"
                 )
+                plotted_series = (
+                    {
+                        algorithm: points
+                        for algorithm, points in series.items()
+                        if algorithm in {
+                            "online_randomized",
+                            "online_randomized_level_greedy",
+                        }
+                    }
+                    if is_online_fairness
+                    else series
+                )
                 save_line_chart(
-                    series=series,
+                    series=plotted_series,
                     title=chart_title(label, assignment_method, setting, metric),
                     y_label=chart_y_label(label, setting, metric),
                     output_path=output_path,
                     theory_points=theory_points,
                     theory_label=theory_label,
-                    zoom_to_empirical=is_offline_fairness,
+                    zoom_to_empirical=is_offline_fairness or is_online_fairness,
                     lower_bound=1.0 if is_offline_fairness or use_log_scale else None,
                     optimal_reference=False,
                     x_ticks=list(range(2, 11)) if is_offline_fairness else None,
                     log_scale=use_log_scale,
+                    show_ci=not is_online_fairness,
                 )
                 chart_paths.append(output_path)
 
@@ -1385,6 +1673,26 @@ def make_charts(summary: list[dict], output_dir: Path) -> list[Path]:
             output_path=output_path,
         )
         chart_paths.append(output_path)
+
+    output_path = output_dir / "offline_approximation_ratio_4panel.png"
+    save_offline_approximation_ratio_4panel(
+        summary=summary,
+        output_path=output_path,
+    )
+    chart_paths.append(output_path)
+    return chart_paths
+
+
+def make_per_workload_charts(rows: list[dict], output_dir: Path) -> list[Path]:
+    chart_paths = []
+    for workload in sorted({row["workload"] for row in rows}):
+        workload_rows = filter_rows_by_workload(rows, workload)
+        workload_summary = aggregate_rows(workload_rows)
+        workload_output_dir = output_dir / "by_workload" / safe_filename(workload)
+        summary_path = workload_output_dir / "summary_by_algorithm.csv"
+        save_summary_csv(workload_summary, summary_path)
+        chart_paths.append(summary_path)
+        chart_paths.extend(make_charts(workload_summary, workload_output_dir))
     return chart_paths
 
 
@@ -1392,6 +1700,17 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate charts from experiment result CSV")
     parser.add_argument("--input", type=str, default="experiment_results.csv")
     parser.add_argument("--output-dir", type=str, default="figures_matplotlib")
+    parser.add_argument(
+        "--workload",
+        type=str,
+        default=None,
+        help="Use only one workload trace, e.g. CTC-SP2-1996.",
+    )
+    parser.add_argument(
+        "--per-workload",
+        action="store_true",
+        help="Also generate a full separate figure set for each workload.",
+    )
     return parser.parse_args()
 
 
@@ -1399,15 +1718,26 @@ def main() -> None:
     args = parse_args()
     output_dir = Path(args.output_dir)
     rows = load_results(args.input)
+    rows = filter_rows_by_workload(rows, args.workload)
     summary = aggregate_rows(rows)
     summary_path = output_dir / "summary_by_algorithm.csv"
     save_summary_csv(summary, summary_path)
     chart_paths = make_charts(summary, output_dir)
+    per_workload_paths = (
+        make_per_workload_charts(rows, output_dir)
+        if args.per_workload
+        else []
+    )
 
     print(f"Loaded rows: {len(rows)}")
+    if args.workload is not None:
+        print(f"Filtered workload: {args.workload}")
     print(f"Saved summary: {summary_path}")
-    print(f"Saved charts: {len(chart_paths)}")
-    for path in chart_paths:
+    if args.per_workload:
+        print(f"Saved per-workload charts/files: {len(per_workload_paths)}")
+    all_paths = chart_paths + per_workload_paths
+    print(f"Saved charts/files: {len(all_paths)}")
+    for path in all_paths:
         print(f"- {path}")
 
 

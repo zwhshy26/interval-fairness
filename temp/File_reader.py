@@ -1,3 +1,4 @@
+import math
 import random
 from pathlib import Path
 import pandas as pd
@@ -29,6 +30,7 @@ ASSIGNMENT_METHODS = [
     "uniform",
     "exponential",
     "length_quantile",
+    "length_delta",
     "containment_quantile",
 ]
 
@@ -37,7 +39,7 @@ RANDOM_ASSIGNMENT_METHODS = [
     "exponential",
 ]
 
-SEEDS = [42, 43, 44, 45, 46]
+SEEDS = [42]
 K_VALUES = range(2, 11)
 OUTPUT_FOLDER_NAME = "generated_intervals"
 
@@ -88,6 +90,23 @@ def build_group_ids(
             for rank in range(num_jobs)
         ]
         return pd.Series(group_ids, index=sorted_index)
+
+    if assignment_method == "length_delta":
+        min_length = df["run_time"].min()
+        max_length = df["run_time"].max()
+        delta = max_length / min_length
+
+        if delta == 1:
+            return pd.Series([1] * num_jobs, index=df.index)
+
+        log_delta = math.log(delta)
+        group_ids = df["run_time"].apply(
+            lambda length: min(
+                int(num_groups * math.log(length / min_length) / log_delta) + 1,
+                num_groups,
+            )
+        )
+        return pd.Series(group_ids, index=df.index)
 
     if assignment_method == "containment_quantile":
         interval_df = pd.DataFrame(
