@@ -213,6 +213,16 @@ def count_by_group(intervals: list[Interval]) -> dict[int, int]:
     return dict(sorted(counts.items()))
 
 
+def fill_group_counts(
+    counts: dict[int, int | float],
+    groups: object,
+) -> dict[int, int | float]:
+    return {
+        group: counts.get(group, 0)
+        for group in sorted(groups)
+    }
+
+
 def get_groups(intervals: list[Interval]) -> list[int]:
     return sorted({interval.group for interval in intervals if interval.group is not None})
 
@@ -645,14 +655,31 @@ def run_offline_randomized_multiple_times(
 
     progress.finish()
     mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    expected_total = sum(mean_by_group.values())
+    metric_ranges = randomized_metric_ranges(run_counts, opt_by_group, global_opt)
+    expected_total = metric_mean(metric_ranges, "selected")
+    run_level_mean_fairness = metric_mean(metric_ranges, "fairness")
+    fairness = ex_ante_fairness(mean_by_group, opt_by_group)
+    min_fairness, max_fairness = ex_ante_fairness_min_max(
+        mean_by_group,
+        opt_by_group,
+    )
+    inverse_ratio = safe_inverse_ratio(global_opt, expected_total)
+    _, min_selected, max_selected = metric_ranges["selected"]
+    metric_ranges["fairness"] = (fairness, min_fairness, max_fairness)
+    metric_ranges["inverse_ratio"] = (
+        inverse_ratio,
+        safe_inverse_ratio(global_opt, max_selected),
+        safe_inverse_ratio(global_opt, min_selected),
+    )
     return {
         "runs": runs,
         "expected_total": expected_total,
         "mean_by_group": mean_by_group,
-        "fairness": ex_ante_fairness(mean_by_group, opt_by_group),
-        "fraction_opt": safe_fraction(expected_total, global_opt),
-        "inverse_ratio": safe_inverse_ratio(global_opt, expected_total),
+        "fairness": fairness,
+        "run_level_mean_fairness": run_level_mean_fairness,
+        "fraction_opt": metric_mean(metric_ranges, "fraction_opt"),
+        "inverse_ratio": inverse_ratio,
+        "metric_ranges": metric_ranges,
         "chosen_groups": chosen_groups,
     }
 
@@ -707,25 +734,29 @@ def compute_num_length_levels(intervals: list[Interval]) -> int:
     return compute_length_level(max_length, min_length) + 1
 
 
-def run_online_random_group_level(
+def run_online_randomized_fair(
     intervals: list[Interval],
     seed: int | None = None,
+    arrival_order: list[Interval] | None = None,
 ) -> tuple[list[Interval], int, int]:
+    """Online randomized fair algorithm: sample one level and one group."""
     groups = get_groups(intervals)
     lengths = [interval.length for interval in intervals if interval.length > 0]
     if not groups or not lengths:
         return [], -1, -1
 
-    min_length = min(lengths)
-    num_levels = compute_num_length_levels(intervals)
     rng = random.Random(seed)
+    min_length = min(lengths)
+    chosen_level = rng.randrange(compute_num_length_levels(intervals))
+    # Keep the level draw aligned with CRS for the same per-run seed. The
+    # fairness algorithm then adds its independent random group restriction.
     chosen_group = rng.choice(groups)
-    chosen_level = rng.randrange(num_levels)
+    arrival_order = arrival_order if arrival_order is not None else intervals
 
     accepted: list[Interval] = []
     accepted_by_start: list[Interval] = []
     starts: list[int] = []
-    for interval in intervals:
+    for interval in arrival_order:
         if interval.group != chosen_group:
             continue
         if compute_length_level(interval.length, min_length) != chosen_level:
@@ -738,7 +769,7 @@ def run_online_random_group_level(
     return accepted, chosen_group, chosen_level
 
 
-def run_online_random_group_level_multiple_times(
+def run_online_randomized_fair_multiple_times(
     intervals: list[Interval],
     opt_by_group: dict[int, int],
     global_opt: int,
@@ -754,7 +785,7 @@ def run_online_random_group_level_multiple_times(
     progress = ProgressBar(runs, "Online randomized", enabled=show_progress)
 
     for run_index in range(runs):
-        solution, chosen_group, chosen_level = run_online_random_group_level(
+        solution, chosen_group, chosen_level = run_online_randomized_fair(
             intervals,
             seed=seed + run_index,
         )
@@ -771,24 +802,43 @@ def run_online_random_group_level_multiple_times(
 
     progress.finish()
     mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    expected_total = sum(mean_by_group.values())
+    metric_ranges = randomized_metric_ranges(run_counts, opt_by_group, global_opt)
+    expected_total = metric_mean(metric_ranges, "selected")
+    run_level_mean_fairness = metric_mean(metric_ranges, "fairness")
+    fairness = ex_ante_fairness(mean_by_group, opt_by_group)
+    min_fairness, max_fairness = ex_ante_fairness_min_max(
+        mean_by_group,
+        opt_by_group,
+    )
+    inverse_ratio = safe_inverse_ratio(global_opt, expected_total)
+    _, min_selected, max_selected = metric_ranges["selected"]
+    metric_ranges["fairness"] = (fairness, min_fairness, max_fairness)
+    metric_ranges["inverse_ratio"] = (
+        inverse_ratio,
+        safe_inverse_ratio(global_opt, max_selected),
+        safe_inverse_ratio(global_opt, min_selected),
+    )
     return {
         "runs": runs,
         "num_levels": num_levels,
         "expected_total": expected_total,
         "mean_by_group": mean_by_group,
-        "fairness": ex_ante_fairness(mean_by_group, opt_by_group),
-        "fraction_opt": safe_fraction(expected_total, global_opt),
-        "inverse_ratio": safe_inverse_ratio(global_opt, expected_total),
+        "fairness": fairness,
+        "run_level_mean_fairness": run_level_mean_fairness,
+        "fraction_opt": metric_mean(metric_ranges, "fraction_opt"),
+        "inverse_ratio": inverse_ratio,
+        "metric_ranges": metric_ranges,
         "chosen_groups": chosen_groups,
         "chosen_levels": chosen_levels,
     }
 
 
-def run_online_random_level_greedy(
+def run_crs(
     intervals: list[Interval],
     seed: int | None = None,
+    arrival_order: list[Interval] | None = None,
 ) -> tuple[list[Interval], int]:
+    """CRS: sample one global length level, then greedily accept arrivals."""
     lengths = [interval.length for interval in intervals if interval.length > 0]
     if not lengths:
         return [], -1
@@ -797,11 +847,12 @@ def run_online_random_level_greedy(
     num_levels = compute_num_length_levels(intervals)
     rng = random.Random(seed)
     chosen_level = rng.randrange(num_levels)
+    arrival_order = arrival_order if arrival_order is not None else intervals
 
     accepted: list[Interval] = []
     accepted_by_start: list[Interval] = []
     starts: list[int] = []
-    for interval in intervals:
+    for interval in arrival_order:
         if compute_length_level(interval.length, min_length) != chosen_level:
             continue
         candidate = interval.copy()
@@ -812,7 +863,7 @@ def run_online_random_level_greedy(
     return accepted, chosen_level
 
 
-def run_online_random_level_greedy_multiple_times(
+def run_crs_multiple_times(
     intervals: list[Interval],
     opt_by_group: dict[int, int],
     global_opt: int,
@@ -827,7 +878,7 @@ def run_online_random_level_greedy_multiple_times(
     progress = ProgressBar(runs, "Online randomized level", enabled=show_progress)
 
     for run_index in range(runs):
-        solution, chosen_level = run_online_random_level_greedy(
+        solution, chosen_level = run_crs(
             intervals,
             seed=seed + run_index,
         )
@@ -843,15 +894,32 @@ def run_online_random_level_greedy_multiple_times(
 
     progress.finish()
     mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    expected_total = sum(mean_by_group.values())
+    metric_ranges = randomized_metric_ranges(run_counts, opt_by_group, global_opt)
+    expected_total = metric_mean(metric_ranges, "selected")
+    run_level_mean_fairness = metric_mean(metric_ranges, "fairness")
+    fairness = ex_ante_fairness(mean_by_group, opt_by_group)
+    min_fairness, max_fairness = ex_ante_fairness_min_max(
+        mean_by_group,
+        opt_by_group,
+    )
+    inverse_ratio = safe_inverse_ratio(global_opt, expected_total)
+    _, min_selected, max_selected = metric_ranges["selected"]
+    metric_ranges["fairness"] = (fairness, min_fairness, max_fairness)
+    metric_ranges["inverse_ratio"] = (
+        inverse_ratio,
+        safe_inverse_ratio(global_opt, max_selected),
+        safe_inverse_ratio(global_opt, min_selected),
+    )
     return {
         "runs": runs,
         "num_levels": num_levels,
         "expected_total": expected_total,
         "mean_by_group": mean_by_group,
-        "fairness": ex_ante_fairness(mean_by_group, opt_by_group),
-        "fraction_opt": safe_fraction(expected_total, global_opt),
-        "inverse_ratio": safe_inverse_ratio(global_opt, expected_total),
+        "fairness": fairness,
+        "run_level_mean_fairness": run_level_mean_fairness,
+        "fraction_opt": metric_mean(metric_ranges, "fraction_opt"),
+        "inverse_ratio": inverse_ratio,
+        "metric_ranges": metric_ranges,
         "chosen_levels": chosen_levels,
     }
 
@@ -885,6 +953,20 @@ def ex_ante_fairness(
     return max(ratios) if ratios else 1.0
 
 
+def ex_ante_fairness_min_max(
+    mean_by_group: dict[int, float],
+    opt_by_group: dict[int, int],
+) -> tuple[float, float]:
+    ratios = [
+        opt / mean_by_group.get(group, 0.0)
+        if mean_by_group.get(group, 0.0) > 0
+        else math.inf
+        for group, opt in opt_by_group.items()
+        if opt > 0
+    ]
+    return min_max(ratios) if ratios else (1.0, 1.0)
+
+
 def mean_counts_by_group(
     run_counts: list[dict[int, int]],
     groups: object,
@@ -896,6 +978,51 @@ def mean_counts_by_group(
         group: mean(counts.get(group, 0) for counts in run_counts)
         for group in ordered_groups
     }
+
+
+def min_max(values: list[float]) -> tuple[float, float]:
+    if not values:
+        return math.nan, math.nan
+    return min(values), max(values)
+
+
+def mean_min_max(values: list[float]) -> tuple[float, float, float]:
+    if not values:
+        return math.nan, math.nan, math.nan
+    return mean(values), min(values), max(values)
+
+
+def randomized_metric_ranges(
+    run_counts: list[dict[int, int]],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+) -> dict[str, tuple[float, float, float]]:
+    selected_values = [sum(counts.values()) for counts in run_counts]
+    fairness_values = [
+        deterministic_fairness(counts, opt_by_group)
+        for counts in run_counts
+    ]
+    fraction_values = [
+        safe_fraction(selected, global_opt)
+        for selected in selected_values
+    ]
+    inverse_ratio_values = [
+        safe_inverse_ratio(global_opt, selected)
+        for selected in selected_values
+    ]
+    return {
+        "selected": mean_min_max(selected_values),
+        "fairness": mean_min_max(fairness_values),
+        "fraction_opt": mean_min_max(fraction_values),
+        "inverse_ratio": mean_min_max(inverse_ratio_values),
+    }
+
+
+def metric_mean(metric_ranges: dict[str, tuple[float, ...]], metric: str) -> float:
+    values = metric_ranges.get(metric)
+    if not values:
+        return math.nan
+    return values[0]
 
 
 def safe_fraction(value: float, denominator: float) -> float:
@@ -915,6 +1042,48 @@ def format_float(value: float) -> str:
     return "inf" if math.isinf(value) else f"{value:.3f}"
 
 
+def format_range(
+    metric_ranges: dict[str, tuple[float, float, float]],
+    metric: str,
+    formatter,
+) -> str:
+    values = metric_ranges.get(metric)
+    if not values or len(values) < 3:
+        return ""
+
+    _, min_value, max_value = values
+    return f" (min: {formatter(min_value)}, max: {formatter(max_value)})"
+
+
+def print_randomized_summary(
+    result: dict,
+    fraction_label: str,
+    ratio_label: str,
+) -> None:
+    metric_ranges = result["metric_ranges"]
+
+    print(f"Runs:                  {result['runs']}")
+    if "num_levels" in result:
+        print(f"Length levels:         {result['num_levels']}")
+    print(
+        f"Expected selected:     {result['expected_total']:.2f}"
+        f"{format_range(metric_ranges, 'selected', lambda value: f'{value:.0f}')}"
+    )
+    print(f"Mean selected by group:{result['mean_by_group']}")
+    print(
+        f"Ex-ante fairness ratio:{format_float(result['fairness'])}"
+        f"{format_range(metric_ranges, 'fairness', format_float)}"
+    )
+    print(
+        f"{fraction_label}:{result['fraction_opt']: .3f}"
+        f"{format_range(metric_ranges, 'fraction_opt', format_float)}"
+    )
+    print(
+        f"{ratio_label}: {format_float(result['inverse_ratio'])}"
+        f"{format_range(metric_ranges, 'inverse_ratio', format_float)}"
+    )
+
+
 def build_result_row(
     input_file: Path,
     k: int,
@@ -928,8 +1097,37 @@ def build_result_row(
     fraction_opt: float,
     inverse_ratio: float,
     delta: float,
+    opt_by_group: dict[int, int],
+    selected_by_group: dict[int, int | float],
     num_levels: int | None = None,
+    metric_ranges: dict[str, tuple[float, ...]] | None = None,
 ) -> dict:
+    def metric_bounds(
+        metric: str,
+        fallback_mean: float,
+    ) -> tuple[float, float, float]:
+        values = metric_ranges.get(metric) if metric_ranges else None
+        if values is None:
+            return fallback_mean, fallback_mean, fallback_mean
+        if len(values) == 3:
+            metric_mean_value, metric_min, metric_max = values
+            return metric_mean_value, metric_min, metric_max
+        if len(values) == 2:
+            metric_min, metric_max = values
+            return fallback_mean, metric_min, metric_max
+        raise ValueError(f"Metric range for {metric} must have length 2 or 3")
+
+    metric_ranges = metric_ranges or {}
+    selected, selected_min, selected_max = metric_bounds("selected", selected)
+    fairness, fairness_min, fairness_max = metric_bounds("fairness", fairness)
+    fraction_opt, fraction_min, fraction_max = metric_bounds(
+        "fraction_opt",
+        fraction_opt,
+    )
+    inverse_ratio, inverse_min, inverse_max = metric_bounds(
+        "inverse_ratio",
+        inverse_ratio,
+    )
     return {
         "input_file": str(input_file),
         "k": k,
@@ -939,10 +1137,20 @@ def build_result_row(
         "algorithm_type": algorithm_type,
         "runs": runs,
         "selected": selected,
+        "min_selected": selected_min,
+        "max_selected": selected_max,
         "fairness": fairness,
+        "min_fairness": fairness_min,
+        "max_fairness": fairness_max,
         "fraction_opt": fraction_opt,
+        "min_fraction_opt": fraction_min,
+        "max_fraction_opt": fraction_max,
         "inverse_ratio": inverse_ratio,
+        "min_inverse_ratio": inverse_min,
+        "max_inverse_ratio": inverse_max,
         "delta": delta,
+        "opt_by_group": json.dumps(opt_by_group, sort_keys=True),
+        "selected_by_group": json.dumps(selected_by_group, sort_keys=True),
         "num_levels": num_levels,
     }
 
@@ -1240,7 +1448,9 @@ def collect_input_files_from_manifest(manifest_path: str) -> list[Path]:
     collected: list[Path] = []
     seen: set[Path] = set()
 
-    with manifest.open("r", encoding="utf-8") as f:
+    # utf-8-sig accepts manifests written by Windows PowerShell, which adds a
+    # UTF-8 BOM when using Set-Content -Encoding utf8.
+    with manifest.open("r", encoding="utf-8-sig") as f:
         for raw_line in f:
             line = raw_line.strip()
             if not line or line.startswith("#"):
@@ -1305,7 +1515,10 @@ def evaluate_workload(
     print("OFFLINE ALGORITHMS")
     print("==================================================")
 
-    offline_greedy_counts = count_by_group(global_opt_solution)
+    offline_greedy_counts = fill_group_counts(
+        count_by_group(global_opt_solution),
+        opt_by_group.keys(),
+    )
     offline_greedy_fairness = deterministic_fairness(offline_greedy_counts, opt_by_group)
     offline_greedy_fraction = 1.0 if global_opt > 0 else 0.0
     offline_greedy_ratio = 1.0 if global_opt > 0 else math.inf
@@ -1333,6 +1546,8 @@ def evaluate_workload(
             fraction_opt=offline_greedy_fraction,
             inverse_ratio=offline_greedy_ratio,
             delta=delta,
+            opt_by_group=opt_by_group,
+            selected_by_group=offline_greedy_counts,
             num_levels=None,
         )
     )
@@ -1341,7 +1556,10 @@ def evaluate_workload(
         intervals,
         r=resolved_r,
     )
-    deterministic_counts = count_by_group(deterministic_solution)
+    deterministic_counts = fill_group_counts(
+        count_by_group(deterministic_solution),
+        opt_by_group.keys(),
+    )
     deterministic_fair = deterministic_fairness(deterministic_counts, opt_by_group)
     deterministic_fraction = safe_fraction(len(deterministic_solution), global_opt)
     deterministic_ratio = safe_inverse_ratio(global_opt, len(deterministic_solution))
@@ -1373,6 +1591,8 @@ def evaluate_workload(
             fraction_opt=deterministic_fraction,
             inverse_ratio=deterministic_ratio,
             delta=delta,
+            opt_by_group=opt_by_group,
+            selected_by_group=deterministic_counts,
             num_levels=None,
         )
     )
@@ -1387,12 +1607,11 @@ def evaluate_workload(
         debug_runs=debug_runs,
     )
     print("\nOffline Randomized")
-    print(f"Runs:                  {offline_randomized['runs']}")
-    print(f"Expected selected:     {offline_randomized['expected_total']:.2f}")
-    print(f"Mean selected by group:{offline_randomized['mean_by_group']}")
-    print(f"Estimated ex-ante fairness ratio: {format_float(offline_randomized['fairness'])}")
-    print(f"Fraction of global OPT:{offline_randomized['fraction_opt']: .3f}")
-    print(f"Observed OPT / ALG ratio: {format_float(offline_randomized['inverse_ratio'])}")
+    print_randomized_summary(
+        offline_randomized,
+        fraction_label="Fraction of global OPT",
+        ratio_label="Observed OPT / ALG ratio",
+    )
     results.append(
         build_result_row(
             input_file=input_file,
@@ -1407,7 +1626,10 @@ def evaluate_workload(
             fraction_opt=offline_randomized["fraction_opt"],
             inverse_ratio=offline_randomized["inverse_ratio"],
             delta=delta,
+            opt_by_group=opt_by_group,
+            selected_by_group=offline_randomized["mean_by_group"],
             num_levels=None,
+            metric_ranges=offline_randomized["metric_ranges"],
         )
     )
 
@@ -1424,40 +1646,7 @@ def evaluate_workload(
     print("ONLINE ALGORITHMS")
     print("==================================================")
 
-    simple_online_solution = run_simple_online_greedy(intervals)
-    simple_online_counts = count_by_group(simple_online_solution)
-    simple_online_fair = deterministic_fairness(simple_online_counts, opt_by_group)
-    simple_online_fraction = safe_fraction(len(simple_online_solution), global_opt)
-    simple_online_ratio = safe_inverse_ratio(global_opt, len(simple_online_solution))
-    print_algorithm_detail(
-        "Simple Online Greedy",
-        len(simple_online_solution),
-        simple_online_counts,
-        simple_online_fair,
-        "Fraction of global offline OPT",
-        simple_online_fraction,
-        "Observed online OPT / ALG ratio",
-        simple_online_ratio,
-    )
-    results.append(
-        build_result_row(
-            input_file=input_file,
-            k=k,
-            alpha=None,
-            r=None,
-            algorithm="simple_online_greedy",
-            algorithm_type="deterministic",
-            runs=1,
-            selected=len(simple_online_solution),
-            fairness=simple_online_fair,
-            fraction_opt=simple_online_fraction,
-            inverse_ratio=simple_online_ratio,
-            delta=delta,
-            num_levels=None,
-        )
-    )
-
-    online_randomized = run_online_random_group_level_multiple_times(
+    online_randomized_fair = run_online_randomized_fair_multiple_times(
         intervals,
         opt_by_group=opt_by_group,
         global_opt=global_opt,
@@ -1466,33 +1655,34 @@ def evaluate_workload(
         show_progress=show_progress,
         debug_runs=debug_runs,
     )
-    print("\nOnline Randomized")
-    print(f"Runs:                  {online_randomized['runs']}")
-    print(f"Length levels:         {online_randomized['num_levels']}")
-    print(f"Expected selected:     {online_randomized['expected_total']:.2f}")
-    print(f"Mean selected by group:{online_randomized['mean_by_group']}")
-    print(f"Estimated ex-ante fairness ratio: {format_float(online_randomized['fairness'])}")
-    print(f"Fraction of global offline OPT:{online_randomized['fraction_opt']: .3f}")
-    print(f"Observed offline OPT / ALG ratio: {format_float(online_randomized['inverse_ratio'])}")
+    print("\nOnline Randomized Fair Algorithm")
+    print_randomized_summary(
+        online_randomized_fair,
+        fraction_label="Fraction of global offline OPT",
+        ratio_label="Observed offline OPT / ALG ratio",
+    )
     results.append(
         build_result_row(
             input_file=input_file,
             k=k,
             alpha=None,
             r=None,
-            algorithm="online_randomized",
+            algorithm="online_randomized_fair",
             algorithm_type="randomized",
-            runs=online_randomized["runs"],
-            selected=online_randomized["expected_total"],
-            fairness=online_randomized["fairness"],
-            fraction_opt=online_randomized["fraction_opt"],
-            inverse_ratio=online_randomized["inverse_ratio"],
+            runs=online_randomized_fair["runs"],
+            selected=online_randomized_fair["expected_total"],
+            fairness=online_randomized_fair["fairness"],
+            fraction_opt=online_randomized_fair["fraction_opt"],
+            inverse_ratio=online_randomized_fair["inverse_ratio"],
             delta=delta,
-            num_levels=online_randomized["num_levels"],
+            opt_by_group=opt_by_group,
+            selected_by_group=online_randomized_fair["mean_by_group"],
+            num_levels=online_randomized_fair["num_levels"],
+            metric_ranges=online_randomized_fair["metric_ranges"],
         )
     )
 
-    online_randomized_level = run_online_random_level_greedy_multiple_times(
+    crs = run_crs_multiple_times(
         intervals,
         opt_by_group=opt_by_group,
         global_opt=global_opt,
@@ -1501,38 +1691,38 @@ def evaluate_workload(
         show_progress=show_progress,
         debug_runs=debug_runs,
     )
-    print("\nOnline Randomized Level Greedy")
-    print(f"Runs:                  {online_randomized_level['runs']}")
-    print(f"Length levels:         {online_randomized_level['num_levels']}")
-    print(f"Expected selected:     {online_randomized_level['expected_total']:.2f}")
-    print(f"Mean selected by group:{online_randomized_level['mean_by_group']}")
-    print(f"Estimated ex-ante fairness ratio: {format_float(online_randomized_level['fairness'])}")
-    print(f"Fraction of global offline OPT:{online_randomized_level['fraction_opt']: .3f}")
-    print(f"Observed offline OPT / ALG ratio: {format_float(online_randomized_level['inverse_ratio'])}")
+    print("\nCRS")
+    print_randomized_summary(
+        crs,
+        fraction_label="Fraction of global offline OPT",
+        ratio_label="Observed offline OPT / ALG ratio",
+    )
     results.append(
         build_result_row(
             input_file=input_file,
             k=k,
             alpha=None,
             r=None,
-            algorithm="online_randomized_level_greedy",
+            algorithm="crs",
             algorithm_type="randomized",
-            runs=online_randomized_level["runs"],
-            selected=online_randomized_level["expected_total"],
-            fairness=online_randomized_level["fairness"],
-            fraction_opt=online_randomized_level["fraction_opt"],
-            inverse_ratio=online_randomized_level["inverse_ratio"],
+            runs=crs["runs"],
+            selected=crs["expected_total"],
+            fairness=crs["fairness"],
+            fraction_opt=crs["fraction_opt"],
+            inverse_ratio=crs["inverse_ratio"],
             delta=delta,
-            num_levels=online_randomized_level["num_levels"],
+            opt_by_group=opt_by_group,
+            selected_by_group=crs["mean_by_group"],
+            num_levels=crs["num_levels"],
+            metric_ranges=crs["metric_ranges"],
         )
     )
 
     print_comparison_table(
         "ONLINE COMPARISON",
         [
-            ("Simple Online Greedy", len(simple_online_solution), simple_online_fair, simple_online_fraction, simple_online_ratio),
-            ("Online Randomized", online_randomized["expected_total"], online_randomized["fairness"], online_randomized["fraction_opt"], online_randomized["inverse_ratio"]),
-            ("Online Randomized Level", online_randomized_level["expected_total"], online_randomized_level["fairness"], online_randomized_level["fraction_opt"], online_randomized_level["inverse_ratio"]),
+            ("Online Randomized Fair Algorithm", online_randomized_fair["expected_total"], online_randomized_fair["fairness"], online_randomized_fair["fraction_opt"], online_randomized_fair["inverse_ratio"]),
+            ("CRS", crs["expected_total"], crs["fairness"], crs["fraction_opt"], crs["inverse_ratio"]),
         ],
         online=True,
     )

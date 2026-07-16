@@ -1,0 +1,3557 @@
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_10groups.csv
+Intervals:             54034
+Groups (k):            10
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 4166, 2: 3424, 3: 4202, 4: 4362, 5: 4466, 6: 4403, 7: 3625, 8: 2658, 9: 1713, 10: 869}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 4161, 2: 3411, 3: 4197, 4: 4350, 5: 4462, 6: 4395, 7: 497, 8: 6, 9: 0, 10: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     10
+alpha:                 1.000
+r:                     10
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Selected:              22131
+Selected by group:     {1: 3720, 2: 2683, 3: 2398, 4: 4347, 5: 3212, 6: 4396, 7: 849, 8: 268, 9: 171, 10: 87}
+Fairness ratio:        10.018
+Fraction of global OPT: 0.869
+Observed OPT / ALG ratio: 1.151
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22446.00 (min: 10566, max: 25479)
+Mean selected by group:{1: 3437.172, 2: 2835.416, 3: 3633.934, 4: 3794.543, 5: 3753.926, 6: 3716.38, 7: 725.363, 8: 285.134, 9: 181.578, 10: 82.555}
+Ex-ante fairness ratio:10.526 (min: 1.150, max: 10.526)
+Fraction of global OPT: 0.881 (min: 0.415, max: 1.000)
+Observed OPT / ALG ratio: 1.135 (min: 1.000, max: 2.411)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22131       10.018          0.869           1.151       
+Offline Randomized      22446.00    10.526          0.881           1.135       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     186.89 (min: 0, max: 1696)
+Mean selected by group:{1: 21.607, 2: 15.877, 3: 17.196, 4: 24.65, 5: 23.48, 6: 21.862, 7: 19.724, 8: 18.886, 9: 15.377, 10: 8.233}
+Ex-ante fairness ratio:244.359 (min: 105.551, max: 244.359)
+Fraction of global offline OPT: 0.007 (min: 0.000, max: 0.067)
+Observed offline OPT / ALG ratio: 136.330 (min: 15.023, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 212.752, 2: 172.419, 3: 222.453, 4: 228.347, 5: 226.626, 6: 225.984, 7: 164.127, 8: 132.077, 9: 103.414, 10: 71.042}
+Ex-ante fairness ratio:22.087 (min: 12.232, max: 22.087)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm186.89      244.359         0.007           136.330     
+CRS                     1759.24     22.087          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_2groups.csv
+Intervals:             54034
+Groups (k):            2
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 20619, 2: 8742}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 20581, 2: 4898}
+Fairness ratio:        1.785
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     2
+alpha:                 1.000
+r:                     2
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Selected:              25479
+Selected by group:     {1: 20604, 2: 4875}
+Fairness ratio:        1.793
+Fraction of global OPT: 1.000
+Observed OPT / ALG ratio: 1.000
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22873.96 (min: 20248, max: 25479)
+Mean selected by group:{1: 16080.726, 2: 6793.236}
+Ex-ante fairness ratio:1.287 (min: 1.282, max: 1.287)
+Fraction of global OPT: 0.898 (min: 0.795, max: 1.000)
+Observed OPT / ALG ratio: 1.114 (min: 1.000, max: 1.258)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.785           1.000           1.000       
+Offline Deterministic   25479       1.793           1.000           1.000       
+Offline Randomized      22873.96    1.287           0.898           1.114       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     894.37 (min: 0, max: 7053)
+Mean selected by group:{1: 533.634, 2: 360.731}
+Ex-ante fairness ratio:38.639 (min: 24.234, max: 38.639)
+Fraction of global offline OPT: 0.035 (min: 0.000, max: 0.277)
+Observed offline OPT / ALG ratio: 28.488 (min: 3.613, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 1062.597, 2: 696.644}
+Ex-ante fairness ratio:19.404 (min: 12.549, max: 19.404)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm894.37      38.639          0.035           28.488      
+CRS                     1759.24     19.404          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_3groups.csv
+Intervals:             54034
+Groups (k):            3
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 13339, 2: 13634, 3: 3795}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 13311, 2: 12154, 3: 14}
+Fairness ratio:        271.071
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     3
+alpha:                 1.000
+r:                     3
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Selected:              22063
+Selected by group:     {1: 11537, 2: 9256, 3: 1270}
+Fairness ratio:        2.988
+Fraction of global OPT: 0.866
+Observed OPT / ALG ratio: 1.155
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22734.53 (min: 17314, max: 25479)
+Mean selected by group:{1: 10677.82, 2: 10838.13, 3: 1218.58}
+Ex-ante fairness ratio:3.114 (min: 1.249, max: 3.114)
+Fraction of global OPT: 0.892 (min: 0.680, max: 1.000)
+Observed OPT / ALG ratio: 1.121 (min: 1.000, max: 1.472)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       271.071         1.000           1.000       
+Offline Deterministic   22063       2.988           0.866           1.155       
+Offline Randomized      22734.53    3.114           0.892           1.121       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     613.00 (min: 0, max: 4379)
+Mean selected by group:{1: 228.048, 2: 256.179, 3: 128.777}
+Ex-ante fairness ratio:58.492 (min: 29.470, max: 58.492)
+Fraction of global offline OPT: 0.024 (min: 0.000, max: 0.172)
+Observed offline OPT / ALG ratio: 41.564 (min: 5.818, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 689.856, 2: 710.325, 3: 359.06}
+Ex-ante fairness ratio:19.336 (min: 10.569, max: 19.336)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm613.00      58.492          0.024           41.564      
+CRS                     1759.24     19.336          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_4groups.csv
+Intervals:             54034
+Groups (k):            4
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 9507, 2: 11113, 3: 8180, 4: 2433}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 9484, 2: 11097, 3: 4898, 4: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     4
+alpha:                 1.000
+r:                     4
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Selected:              22714
+Selected by group:     {1: 9487, 2: 7732, 3: 4887, 4: 608}
+Fairness ratio:        4.002
+Fraction of global OPT: 0.891
+Observed OPT / ALG ratio: 1.122
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22206.39 (min: 14224, max: 25479)
+Mean selected by group:{1: 7592.88, 2: 8967.673, 3: 5040.023, 4: 605.817}
+Ex-ante fairness ratio:4.016 (min: 1.239, max: 4.016)
+Fraction of global OPT: 0.872 (min: 0.558, max: 1.000)
+Observed OPT / ALG ratio: 1.147 (min: 1.000, max: 1.791)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22714       4.002           0.891           1.122       
+Offline Randomized      22206.39    4.016           0.872           1.147       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     451.76 (min: 0, max: 3888)
+Mean selected by group:{1: 130.137, 2: 134.917, 3: 115.064, 4: 71.641}
+Ex-ante fairness ratio:82.369 (min: 33.961, max: 82.369)
+Fraction of global offline OPT: 0.018 (min: 0.000, max: 0.153)
+Observed offline OPT / ALG ratio: 56.400 (min: 6.553, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 486.956, 2: 575.641, 3: 459.991, 4: 236.653}
+Ex-ante fairness ratio:19.523 (min: 10.281, max: 19.523)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm451.76      82.369          0.018           56.400      
+CRS                     1759.24     19.523          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_5groups.csv
+Intervals:             54034
+Groups (k):            5
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 7590, 2: 8563, 3: 8869, 4: 5025, 5: 1833}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 7572, 2: 8547, 3: 8857, 4: 503, 5: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     5
+alpha:                 1.000
+r:                     5
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Selected:              21981
+Selected by group:     {1: 7575, 2: 5251, 3: 7754, 4: 1034, 5: 367}
+Fairness ratio:        4.995
+Fraction of global OPT: 0.863
+Observed OPT / ALG ratio: 1.159
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22098.85 (min: 12449, max: 25479)
+Mean selected by group:{1: 6056.958, 2: 7154.191, 3: 7167.7, 4: 1351.564, 5: 368.433}
+Ex-ante fairness ratio:4.975 (min: 1.197, max: 4.975)
+Fraction of global OPT: 0.867 (min: 0.489, max: 1.000)
+Observed OPT / ALG ratio: 1.153 (min: 1.000, max: 2.047)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   21981       4.995           0.863           1.159       
+Offline Randomized      22098.85    4.975           0.867           1.153       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     360.60 (min: 0, max: 2813)
+Mean selected by group:{1: 74.235, 2: 84.524, 3: 91.851, 4: 71.633, 5: 38.357}
+Ex-ante fairness ratio:102.243 (min: 47.788, max: 102.243)
+Fraction of global offline OPT: 0.014 (min: 0.000, max: 0.110)
+Observed offline OPT / ALG ratio: 70.657 (min: 9.058, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 385.171, 2: 450.8, 3: 452.61, 4: 296.204, 5: 174.456}
+Ex-ante fairness ratio:19.706 (min: 10.507, max: 19.706)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm360.60      102.243         0.014           70.657      
+CRS                     1759.24     19.706          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_6groups.csv
+Intervals:             54034
+Groups (k):            6
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 6420, 2: 6919, 3: 7280, 4: 6954, 5: 3601, 6: 1468}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 6405, 2: 6906, 3: 7270, 4: 4884, 5: 14, 6: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     6
+alpha:                 1.000
+r:                     6
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Selected:              21841
+Selected by group:     {1: 6407, 2: 3877, 3: 5827, 4: 4879, 5: 606, 6: 245}
+Fairness ratio:        5.992
+Fraction of global OPT: 0.857
+Observed OPT / ALG ratio: 1.167
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22356.44 (min: 11424, max: 25479)
+Mean selected by group:{1: 5173.05, 2: 5822.074, 3: 6064.51, 4: 4453.254, 5: 626.29, 6: 217.264}
+Ex-ante fairness ratio:6.757 (min: 1.188, max: 6.757)
+Fraction of global OPT: 0.877 (min: 0.448, max: 1.000)
+Observed OPT / ALG ratio: 1.140 (min: 1.000, max: 2.230)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   21841       5.992           0.857           1.167       
+Offline Randomized      22356.44    6.757           0.877           1.140       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     316.59 (min: 0, max: 2674)
+Mean selected by group:{1: 55.341, 2: 57.845, 3: 68.041, 4: 64.301, 5: 44.633, 6: 26.429}
+Ex-ante fairness ratio:119.613 (min: 55.545, max: 119.613)
+Fraction of global offline OPT: 0.012 (min: 0.000, max: 0.105)
+Observed offline OPT / ALG ratio: 80.479 (min: 9.528, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 324.635, 2: 365.221, 3: 372.741, 4: 337.584, 5: 221.977, 6: 137.083}
+Ex-ante fairness ratio:20.599 (min: 10.709, max: 20.599)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm316.59      119.613         0.012           80.479      
+CRS                     1759.24     20.599          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_7groups.csv
+Intervals:             54034
+Groups (k):            7
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 5670, 2: 5431, 3: 6354, 4: 6262, 5: 5074, 6: 2796, 7: 1244}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 5663, 2: 5415, 3: 6343, 4: 6252, 5: 1803, 6: 3, 7: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     7
+alpha:                 1.000
+r:                     7
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Selected:              22768
+Selected by group:     {1: 4315, 2: 4976, 3: 4959, 4: 5748, 5: 2193, 6: 399, 7: 178}
+Fairness ratio:        7.008
+Fraction of global OPT: 0.894
+Observed OPT / ALG ratio: 1.119
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22483.55 (min: 10872, max: 25479)
+Mean selected by group:{1: 4671.422, 2: 4562.088, 3: 5432.164, 4: 5286.289, 5: 2017.65, 6: 350.975, 7: 162.964}
+Ex-ante fairness ratio:7.966 (min: 1.170, max: 7.966)
+Fraction of global OPT: 0.882 (min: 0.427, max: 1.000)
+Observed OPT / ALG ratio: 1.133 (min: 1.000, max: 2.344)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22768       7.008           0.894           1.119       
+Offline Randomized      22483.55    7.966           0.882           1.133       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     269.69 (min: 0, max: 2151)
+Mean selected by group:{1: 39.202, 2: 40.096, 3: 46.823, 4: 46.525, 5: 46.025, 6: 33.743, 7: 17.276}
+Ex-ante fairness ratio:144.635 (min: 72.007, max: 144.635)
+Fraction of global offline OPT: 0.011 (min: 0.000, max: 0.084)
+Observed offline OPT / ALG ratio: 94.475 (min: 11.845, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 288.282, 2: 283.231, 3: 329.752, 4: 319.352, 5: 252.766, 6: 173.937, 7: 111.921}
+Ex-ante fairness ratio:20.074 (min: 11.115, max: 20.074)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm269.69      144.635         0.011           94.475      
+CRS                     1759.24     20.074          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_8groups.csv
+Intervals:             54034
+Groups (k):            8
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 4829, 2: 4678, 3: 5594, 4: 5520, 5: 5405, 6: 3797, 7: 2268, 8: 1092}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 4823, 2: 4661, 3: 5586, 4: 5511, 5: 4856, 6: 42, 7: 0, 8: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     8
+alpha:                 1.000
+r:                     8
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Selected:              22841
+Selected by group:     {1: 4824, 2: 2996, 3: 4864, 4: 4384, 5: 4858, 6: 495, 7: 283, 8: 137}
+Fairness ratio:        8.014
+Fraction of global OPT: 0.896
+Observed OPT / ALG ratio: 1.115
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22309.52 (min: 10784, max: 25479)
+Mean selected by group:{1: 3949.257, 2: 3941.386, 3: 4764.338, 4: 4611.404, 5: 4132.338, 6: 496.59, 7: 274.428, 8: 139.776}
+Ex-ante fairness ratio:8.264 (min: 1.174, max: 8.264)
+Fraction of global OPT: 0.876 (min: 0.423, max: 1.000)
+Observed OPT / ALG ratio: 1.142 (min: 1.000, max: 2.363)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22841       8.014           0.896           1.115       
+Offline Randomized      22309.52    8.264           0.876           1.142       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     233.58 (min: 0, max: 2138)
+Mean selected by group:{1: 33.627, 2: 32.182, 3: 31.472, 4: 35.752, 5: 30.112, 6: 28.823, 7: 26.145, 8: 15.467}
+Ex-ante fairness ratio:179.497 (min: 70.602, max: 179.497)
+Fraction of global offline OPT: 0.009 (min: 0.000, max: 0.084)
+Observed offline OPT / ALG ratio: 109.080 (min: 11.917, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 245.221, 2: 241.735, 3: 295.949, 4: 279.692, 5: 273.259, 6: 186.732, 7: 142.015, 8: 94.638}
+Ex-ante fairness ratio:20.334 (min: 11.539, max: 20.334)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm233.58      179.497         0.009           109.080     
+CRS                     1759.24     20.334          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_containment_quantile_9groups.csv
+Intervals:             54034
+Groups (k):            9
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 4421, 2: 4098, 3: 4821, 4: 4837, 5: 4808, 6: 4589, 7: 3142, 8: 1927, 9: 970}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 4416, 2: 4084, 3: 4811, 4: 4827, 5: 4803, 6: 2524, 7: 14, 8: 0, 9: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     9
+alpha:                 1.000
+r:                     9
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Selected:              22737
+Selected by group:     {1: 3280, 2: 3846, 3: 4815, 4: 4113, 5: 3713, 6: 2293, 7: 355, 8: 214, 9: 108}
+Fairness ratio:        9.005
+Fraction of global OPT: 0.892
+Observed OPT / ALG ratio: 1.121
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22253.76 (min: 10591, max: 25479)
+Mean selected by group:{1: 3619.124, 2: 3392.981, 3: 4131.196, 4: 4079.307, 5: 4038.738, 6: 2309.535, 7: 341.049, 8: 229.313, 9: 112.52}
+Ex-ante fairness ratio:9.213 (min: 1.167, max: 9.213)
+Fraction of global OPT: 0.873 (min: 0.416, max: 1.000)
+Observed OPT / ALG ratio: 1.145 (min: 1.000, max: 2.406)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22737       9.005           0.892           1.121       
+Offline Randomized      22253.76    9.213           0.873           1.145       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     208.34 (min: 0, max: 1752)
+Mean selected by group:{1: 26.211, 2: 23.922, 3: 23.526, 4: 29.153, 5: 26.712, 6: 26.514, 7: 23.357, 8: 19.116, 9: 9.828}
+Ex-ante fairness ratio:204.922 (min: 98.698, max: 204.922)
+Fraction of global offline OPT: 0.008 (min: 0.000, max: 0.069)
+Observed offline OPT / ALG ratio: 122.296 (min: 14.543, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 225.625, 2: 208.297, 3: 255.934, 4: 247.924, 5: 245.789, 6: 216.612, 7: 159.38, 8: 118.444, 9: 81.236}
+Ex-ante fairness ratio:21.185 (min: 11.941, max: 21.185)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm208.34      204.922         0.008           122.296     
+CRS                     1759.24     21.185          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_10groups_seed42.csv
+Intervals:             54034
+Groups (k):            10
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 12372, 2: 7988, 3: 5268, 4: 3468, 5: 2149, 6: 1382, 7: 935, 8: 549, 9: 369, 10: 195}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 10382, 2: 6096, 3: 3669, 4: 2244, 5: 1277, 6: 771, 7: 480, 8: 277, 9: 180, 10: 103}
+Fairness ratio:        2.050
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     10
+alpha:                 1.000
+r:                     10
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Selected:              24183
+Selected by group:     {1: 9747, 2: 5743, 3: 3511, 4: 2137, 5: 1251, 6: 766, 7: 469, 8: 279, 9: 177, 10: 103}
+Fairness ratio:        2.085
+Fraction of global OPT: 0.949
+Observed OPT / ALG ratio: 1.054
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24264.25 (min: 23763, max: 24982)
+Mean selected by group:{1: 9769.784, 2: 5764.01, 3: 3515.237, 4: 2161.156, 5: 1248.807, 6: 760.459, 7: 480.212, 8: 280.086, 9: 182.292, 10: 102.204}
+Ex-ante fairness ratio:2.024 (min: 1.266, max: 2.024)
+Fraction of global OPT: 0.952 (min: 0.933, max: 0.980)
+Observed OPT / ALG ratio: 1.050 (min: 1.020, max: 1.072)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       2.050           1.000           1.000       
+Offline Deterministic   24183       2.085           0.949           1.054       
+Offline Randomized      24264.25    2.024           0.952           1.050       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     210.34 (min: 0, max: 3569)
+Mean selected by group:{1: 79.378, 2: 46.182, 3: 32.311, 4: 20.275, 5: 12.285, 6: 7.716, 7: 5.476, 8: 3.492, 9: 1.972, 10: 1.249}
+Ex-ante fairness ratio:187.120 (min: 155.862, max: 187.120)
+Fraction of global offline OPT: 0.008 (min: 0.000, max: 0.140)
+Observed offline OPT / ALG ratio: 121.135 (min: 7.139, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 713.327, 2: 420.182, 3: 256.535, 4: 154.975, 5: 88.255, 6: 54.229, 7: 32.722, 8: 19.743, 9: 12.607, 10: 6.666}
+Ex-ante fairness ratio:29.269 (min: 17.344, max: 29.269)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm210.34      187.120         0.008           121.135     
+CRS                     1759.24     29.269          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_2groups_seed42.csv
+Intervals:             54034
+Groups (k):            2
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 17509, 2: 11542}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 15986, 2: 9493}
+Fairness ratio:        1.216
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     2
+alpha:                 1.000
+r:                     2
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Selected:              24847
+Selected by group:     {1: 15314, 2: 9533}
+Fairness ratio:        1.211
+Fraction of global OPT: 0.975
+Observed OPT / ALG ratio: 1.025
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24855.33 (min: 24647, max: 25062)
+Mean selected by group:{1: 15315.808, 2: 9539.522}
+Ex-ante fairness ratio:1.210 (min: 1.143, max: 1.210)
+Fraction of global OPT: 0.976 (min: 0.967, max: 0.984)
+Observed OPT / ALG ratio: 1.025 (min: 1.017, max: 1.034)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.216           1.000           1.000       
+Offline Deterministic   24847       1.211           0.975           1.025       
+Offline Randomized      24855.33    1.210           0.976           1.025       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     979.06 (min: 0, max: 5373)
+Mean selected by group:{1: 582.486, 2: 396.577}
+Ex-ante fairness ratio:30.059 (min: 29.104, max: 30.059)
+Fraction of global offline OPT: 0.038 (min: 0.000, max: 0.211)
+Observed offline OPT / ALG ratio: 26.024 (min: 4.742, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 1099.432, 2: 659.809}
+Ex-ante fairness ratio:17.493 (min: 15.925, max: 17.493)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm979.06      30.059          0.038           26.024      
+CRS                     1759.24     17.493          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_3groups_seed42.csv
+Intervals:             54034
+Groups (k):            3
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 14950, 2: 9760, 3: 6367}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 13126, 2: 7740, 3: 4613}
+Fairness ratio:        1.380
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     3
+alpha:                 1.000
+r:                     3
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Selected:              24587
+Selected by group:     {1: 12455, 2: 7443, 3: 4689}
+Fairness ratio:        1.358
+Fraction of global OPT: 0.965
+Observed OPT / ALG ratio: 1.036
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24546.42 (min: 24260, max: 24886)
+Mean selected by group:{1: 12441.98, 2: 7514.23, 3: 4590.21}
+Ex-ante fairness ratio:1.387 (min: 1.202, max: 1.387)
+Fraction of global OPT: 0.963 (min: 0.952, max: 0.977)
+Observed OPT / ALG ratio: 1.038 (min: 1.024, max: 1.050)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.380           1.000           1.000       
+Offline Deterministic   24587       1.358           0.965           1.036       
+Offline Randomized      24546.42    1.387           0.963           1.038       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     686.66 (min: 0, max: 4446)
+Mean selected by group:{1: 324.902, 2: 222.138, 3: 139.617}
+Ex-ante fairness ratio:46.014 (min: 43.937, max: 46.014)
+Fraction of global offline OPT: 0.027 (min: 0.000, max: 0.174)
+Observed offline OPT / ALG ratio: 37.106 (min: 5.731, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 903.619, 2: 537.003, 3: 318.619}
+Ex-ante fairness ratio:19.983 (min: 16.545, max: 19.983)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm686.66      46.014          0.027           37.106      
+CRS                     1759.24     19.983          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_4groups_seed42.csv
+Intervals:             54034
+Groups (k):            4
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 13797, 2: 8865, 3: 5916, 4: 3829}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 11861, 2: 6924, 3: 4203, 4: 2491}
+Fairness ratio:        1.537
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     4
+alpha:                 1.000
+r:                     4
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Selected:              24355
+Selected by group:     {1: 11046, 2: 6608, 3: 4145, 4: 2556}
+Fairness ratio:        1.498
+Fraction of global OPT: 0.956
+Observed OPT / ALG ratio: 1.046
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24335.65 (min: 23957, max: 24810)
+Mean selected by group:{1: 11115.179, 2: 6563.745, 3: 4138.516, 4: 2518.212}
+Ex-ante fairness ratio:1.521 (min: 1.241, max: 1.521)
+Fraction of global OPT: 0.955 (min: 0.940, max: 0.974)
+Observed OPT / ALG ratio: 1.047 (min: 1.027, max: 1.064)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.537           1.000           1.000       
+Offline Deterministic   24355       1.498           0.956           1.046       
+Offline Randomized      24335.65    1.521           0.955           1.047       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     530.04 (min: 0, max: 4053)
+Mean selected by group:{1: 237.004, 2: 137.481, 3: 88.367, 4: 67.188}
+Ex-ante fairness ratio:66.948 (min: 56.989, max: 66.948)
+Fraction of global offline OPT: 0.021 (min: 0.000, max: 0.159)
+Observed offline OPT / ALG ratio: 48.070 (min: 6.286, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 815.154, 2: 479.803, 3: 290.97, 4: 173.314}
+Ex-ante fairness ratio:22.093 (min: 16.926, max: 22.093)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm530.04      66.948          0.021           48.070      
+CRS                     1759.24     22.093          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_5groups_seed42.csv
+Intervals:             54034
+Groups (k):            5
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 13172, 2: 8515, 3: 5627, 4: 3554, 5: 2388}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 11215, 2: 6577, 3: 3958, 4: 2306, 5: 1423}
+Fairness ratio:        1.678
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     5
+alpha:                 1.000
+r:                     5
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Selected:              24213
+Selected by group:     {1: 10483, 2: 6224, 3: 3764, 4: 2302, 5: 1440}
+Fairness ratio:        1.658
+Fraction of global OPT: 0.950
+Observed OPT / ALG ratio: 1.052
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24166.01 (min: 23638, max: 24775)
+Mean selected by group:{1: 10455.029, 2: 6172.634, 3: 3814.675, 4: 2283.616, 5: 1440.057}
+Ex-ante fairness ratio:1.658 (min: 1.260, max: 1.658)
+Fraction of global OPT: 0.948 (min: 0.928, max: 0.972)
+Observed OPT / ALG ratio: 1.054 (min: 1.028, max: 1.078)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.678           1.000           1.000       
+Offline Deterministic   24213       1.658           0.950           1.052       
+Offline Randomized      24166.01    1.658           0.948           1.054       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     419.10 (min: 0, max: 3844)
+Mean selected by group:{1: 162.769, 2: 107.267, 3: 69.657, 4: 48.629, 5: 30.781}
+Ex-ante fairness ratio:80.925 (min: 73.084, max: 80.925)
+Fraction of global offline OPT: 0.016 (min: 0.000, max: 0.151)
+Observed offline OPT / ALG ratio: 60.794 (min: 6.628, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 769.194, 2: 455.52, 3: 275.561, 4: 160.324, 5: 98.642}
+Ex-ante fairness ratio:24.209 (min: 17.124, max: 24.209)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm419.10      80.925          0.016           60.794      
+CRS                     1759.24     24.209          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_6groups_seed42.csv
+Intervals:             54034
+Groups (k):            6
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 12810, 2: 8273, 3: 5472, 4: 3493, 5: 2277, 6: 1492}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 10829, 2: 6344, 3: 3833, 4: 2285, 5: 1366, 6: 822}
+Fairness ratio:        1.815
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     6
+alpha:                 1.000
+r:                     6
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Selected:              24062
+Selected by group:     {1: 10067, 2: 5923, 3: 3609, 4: 2219, 5: 1397, 6: 847}
+Fairness ratio:        1.762
+Fraction of global OPT: 0.944
+Observed OPT / ALG ratio: 1.059
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24133.72 (min: 23706, max: 24753)
+Mean selected by group:{1: 10099.418, 2: 5954.774, 3: 3675.22, 4: 2214.784, 5: 1368.008, 6: 821.518}
+Ex-ante fairness ratio:1.816 (min: 1.268, max: 1.816)
+Fraction of global OPT: 0.947 (min: 0.930, max: 0.972)
+Observed OPT / ALG ratio: 1.056 (min: 1.029, max: 1.075)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.815           1.000           1.000       
+Offline Deterministic   24062       1.762           0.944           1.059       
+Offline Randomized      24133.72    1.816           0.947           1.056       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     358.96 (min: 0, max: 3739)
+Mean selected by group:{1: 135.46, 2: 89.19, 3: 58.794, 4: 37.761, 5: 23.687, 6: 14.069}
+Ex-ante fairness ratio:106.049 (min: 92.503, max: 106.049)
+Fraction of global offline OPT: 0.014 (min: 0.000, max: 0.147)
+Observed offline OPT / ALG ratio: 70.980 (min: 6.814, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 743.66, 2: 439.974, 3: 267.158, 4: 156.578, 5: 94.705, 6: 57.166}
+Ex-ante fairness ratio:26.099 (min: 17.226, max: 26.099)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm358.96      106.049         0.014           70.980      
+CRS                     1759.24     26.099          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_7groups_seed42.csv
+Intervals:             54034
+Groups (k):            7
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 12594, 2: 8166, 3: 5372, 4: 3462, 5: 2227, 6: 1469, 7: 909}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 10615, 2: 6234, 3: 3750, 4: 2253, 5: 1331, 6: 806, 7: 490}
+Fairness ratio:        1.855
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     7
+alpha:                 1.000
+r:                     7
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Selected:              24086
+Selected by group:     {1: 9866, 2: 5892, 3: 3523, 4: 2186, 5: 1354, 6: 782, 7: 483}
+Fairness ratio:        1.882
+Fraction of global OPT: 0.945
+Observed OPT / ALG ratio: 1.058
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24121.07 (min: 23698, max: 24749)
+Mean selected by group:{1: 9905.996, 2: 5850.245, 3: 3581.473, 4: 2178.487, 5: 1321.764, 6: 796.79, 7: 486.319}
+Ex-ante fairness ratio:1.869 (min: 1.271, max: 1.869)
+Fraction of global OPT: 0.947 (min: 0.930, max: 0.971)
+Observed OPT / ALG ratio: 1.056 (min: 1.029, max: 1.075)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.855           1.000           1.000       
+Offline Deterministic   24086       1.882           0.945           1.058       
+Offline Randomized      24121.07    1.869           0.947           1.056       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     303.77 (min: 0, max: 3652)
+Mean selected by group:{1: 108.679, 2: 78.044, 3: 45.618, 4: 30.471, 5: 20.916, 6: 12.467, 7: 7.58}
+Ex-ante fairness ratio:119.921 (min: 104.633, max: 119.921)
+Fraction of global offline OPT: 0.012 (min: 0.000, max: 0.143)
+Observed offline OPT / ALG ratio: 83.875 (min: 6.977, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 729.328, 2: 431.443, 3: 261.84, 4: 154.359, 5: 92.536, 6: 55.828, 7: 33.907}
+Ex-ante fairness ratio:26.809 (min: 17.268, max: 26.809)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm303.77      119.921         0.012           83.875      
+CRS                     1759.24     26.809          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_8groups_seed42.csv
+Intervals:             54034
+Groups (k):            8
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 12474, 2: 8083, 3: 5308, 4: 3474, 5: 2169, 6: 1450, 7: 900, 8: 573}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 10493, 2: 6174, 3: 3691, 4: 2255, 5: 1287, 6: 823, 7: 459, 8: 297}
+Fairness ratio:        1.961
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     8
+alpha:                 1.000
+r:                     8
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Selected:              24030
+Selected by group:     {1: 9719, 2: 5761, 3: 3559, 4: 2134, 5: 1282, 6: 814, 7: 465, 8: 296}
+Fairness ratio:        1.936
+Fraction of global OPT: 0.943
+Observed OPT / ALG ratio: 1.060
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24112.95 (min: 23717, max: 24741)
+Mean selected by group:{1: 9764.831, 2: 5807.053, 3: 3534.105, 4: 2154.979, 5: 1270.991, 6: 815.813, 7: 464.683, 8: 300.499}
+Ex-ante fairness ratio:1.937 (min: 1.277, max: 1.937)
+Fraction of global OPT: 0.946 (min: 0.931, max: 0.971)
+Observed OPT / ALG ratio: 1.057 (min: 1.030, max: 1.074)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.961           1.000           1.000       
+Offline Deterministic   24030       1.936           0.943           1.060       
+Offline Randomized      24112.95    1.937           0.946           1.057       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     276.93 (min: 0, max: 3606)
+Mean selected by group:{1: 109.698, 2: 65.636, 3: 40.359, 4: 25.024, 5: 14.166, 6: 10.44, 7: 7.345, 8: 4.259}
+Ex-ante fairness ratio:153.113 (min: 113.712, max: 153.113)
+Fraction of global offline OPT: 0.011 (min: 0.000, max: 0.142)
+Observed offline OPT / ALG ratio: 92.006 (min: 7.066, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 721.555, 2: 425.747, 3: 258.037, 4: 155.175, 5: 89.344, 6: 56.738, 7: 32.305, 8: 20.34}
+Ex-ante fairness ratio:28.171 (min: 17.288, max: 28.171)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm276.93      153.113         0.011           92.006      
+CRS                     1759.24     28.171          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_exponential_9groups_seed42.csv
+Intervals:             54034
+Groups (k):            9
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 12410, 2: 8008, 3: 5303, 4: 3472, 5: 2155, 6: 1385, 7: 934, 8: 565, 9: 341}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 10418, 2: 6119, 3: 3697, 4: 2245, 5: 1275, 6: 802, 7: 462, 8: 288, 9: 173}
+Fairness ratio:        2.022
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     9
+alpha:                 1.000
+r:                     9
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Selected:              24233
+Selected by group:     {1: 9797, 2: 5773, 3: 3566, 4: 2109, 5: 1248, 6: 801, 7: 472, 8: 292, 9: 175}
+Fairness ratio:        1.979
+Fraction of global OPT: 0.951
+Observed OPT / ALG ratio: 1.051
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24226.57 (min: 23875, max: 24727)
+Mean selected by group:{1: 9764.888, 2: 5778.249, 3: 3550.217, 4: 2158.995, 5: 1252.407, 6: 786.737, 7: 468.079, 8: 291.35, 9: 175.646}
+Ex-ante fairness ratio:1.995 (min: 1.271, max: 1.995)
+Fraction of global OPT: 0.951 (min: 0.937, max: 0.970)
+Observed OPT / ALG ratio: 1.052 (min: 1.030, max: 1.067)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       2.022           1.000           1.000       
+Offline Deterministic   24233       1.979           0.951           1.051       
+Offline Randomized      24226.57    1.995           0.951           1.052       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     241.81 (min: 0, max: 3583)
+Mean selected by group:{1: 92.001, 2: 56.139, 3: 36.253, 4: 22.41, 5: 13.557, 6: 8.696, 7: 6.921, 8: 3.939, 9: 1.895}
+Ex-ante fairness ratio:179.947 (min: 134.890, max: 179.947)
+Fraction of global offline OPT: 0.009 (min: 0.000, max: 0.141)
+Observed offline OPT / ALG ratio: 105.367 (min: 7.111, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 716.542, 2: 421.646, 3: 258.075, 4: 155.239, 5: 87.963, 6: 54.942, 7: 32.728, 8: 20.575, 9: 11.531}
+Ex-ante fairness ratio:29.572 (min: 17.319, max: 29.572)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm241.81      179.947         0.009           105.367     
+CRS                     1759.24     29.572          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_10groups.csv
+Intervals:             54034
+Groups (k):            10
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 43, 2: 2, 3: 9521, 4: 9089, 5: 5513, 6: 3503, 7: 2712, 8: 1852, 9: 802, 10: 5}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 43, 2: 2, 3: 9359, 4: 8507, 5: 4448, 6: 1979, 7: 905, 8: 231, 9: 5, 10: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     10
+alpha:                 1.000
+r:                     10
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Selected:              21290
+Selected by group:     {1: 41, 2: 2, 3: 7272, 4: 6967, 5: 3793, 6: 1798, 7: 967, 8: 367, 9: 82, 10: 1}
+Fairness ratio:        9.780
+Fraction of global OPT: 0.836
+Observed OPT / ALG ratio: 1.197
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21418.39 (min: 8089, max: 25479)
+Mean selected by group:{1: 34.481, 2: 1.396, 3: 7469.243, 4: 7040.835, 5: 3707.95, 6: 1758.119, 7: 937.396, 8: 379.428, 9: 89.066, 10: 0.475}
+Ex-ante fairness ratio:10.526 (min: 1.247, max: 10.526)
+Fraction of global OPT: 0.841 (min: 0.317, max: 1.000)
+Observed OPT / ALG ratio: 1.190 (min: 1.000, max: 3.150)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   21290       9.780           0.836           1.197       
+Offline Randomized      21418.39    10.526          0.841           1.190       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     184.89 (min: 0, max: 6728)
+Mean selected by group:{1: 0.236, 2: 0.014, 3: 43.44, 4: 51.669, 5: 24.086, 6: 24.423, 7: 16.467, 8: 19.03, 9: 5.504, 10: 0.018}
+Ex-ante fairness ratio:277.778 (min: 97.320, max: 277.778)
+Fraction of global offline OPT: 0.007 (min: 0.000, max: 0.264)
+Observed offline OPT / ALG ratio: 137.808 (min: 3.787, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 2.283, 2: 0.112, 3: 460.37, 4: 492.965, 5: 283.736, 6: 182.925, 7: 174.689, 8: 114.304, 9: 47.634, 10: 0.223}
+Ex-ante fairness ratio:22.422 (min: 15.525, max: 22.422)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm184.89      277.778         0.007           137.808     
+CRS                     1759.24     22.422          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_2groups.csv
+Intervals:             54034
+Groups (k):            2
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 22466, 2: 5777}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 22359, 2: 3120}
+Fairness ratio:        1.852
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     2
+alpha:                 1.000
+r:                     2
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Selected:              22892
+Selected by group:     {1: 18521, 2: 4371}
+Fairness ratio:        1.322
+Fraction of global OPT: 0.898
+Observed OPT / ALG ratio: 1.113
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22505.90 (min: 19520, max: 25468)
+Mean selected by group:{1: 18121.946, 2: 4383.95}
+Ex-ante fairness ratio:1.318 (min: 1.240, max: 1.318)
+Fraction of global OPT: 0.883 (min: 0.766, max: 1.000)
+Observed OPT / ALG ratio: 1.132 (min: 1.000, max: 1.305)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.852           1.000           1.000       
+Offline Deterministic   22892       1.322           0.898           1.113       
+Offline Randomized      22505.90    1.318           0.883           1.132       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     879.05 (min: 0, max: 8288)
+Mean selected by group:{1: 610.385, 2: 268.668}
+Ex-ante fairness ratio:36.806 (min: 21.502, max: 36.806)
+Fraction of global offline OPT: 0.035 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 28.985 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 1239.466, 2: 519.775}
+Ex-ante fairness ratio:18.126 (min: 11.114, max: 18.126)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm879.05      36.806          0.035           28.985      
+CRS                     1759.24     18.126          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_3groups.csv
+Intervals:             54034
+Groups (k):            3
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 12573, 2: 14211, 3: 2370}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 12399, 2: 12625, 3: 455}
+Fairness ratio:        5.209
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     3
+alpha:                 1.000
+r:                     3
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Selected:              21483
+Selected by group:     {1: 9400, 2: 11020, 3: 1063}
+Fairness ratio:        2.230
+Fraction of global OPT: 0.843
+Observed OPT / ALG ratio: 1.186
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21087.82 (min: 13086, max: 25460)
+Mean selected by group:{1: 9207.55, 2: 10829.98, 3: 1050.29}
+Ex-ante fairness ratio:2.257 (min: 1.312, max: 2.257)
+Fraction of global OPT: 0.828 (min: 0.514, max: 0.999)
+Observed OPT / ALG ratio: 1.208 (min: 1.001, max: 1.947)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       5.209           1.000           1.000       
+Offline Deterministic   21483       2.230           0.843           1.186       
+Offline Randomized      21087.82    2.257           0.828           1.208       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     590.53 (min: 0, max: 8288)
+Mean selected by group:{1: 210.709, 2: 299.756, 3: 80.063}
+Ex-ante fairness ratio:59.670 (min: 29.602, max: 59.670)
+Fraction of global offline OPT: 0.023 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 43.146 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 625.829, 2: 916.041, 3: 217.371}
+Ex-ante fairness ratio:20.090 (min: 10.903, max: 20.090)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm590.53      59.670          0.023           43.146      
+CRS                     1759.24     20.090          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_4groups.csv
+Intervals:             54034
+Groups (k):            4
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 1537, 2: 21042, 3: 5614, 4: 1288}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 1515, 2: 20844, 3: 3052, 4: 68}
+Fairness ratio:        18.941
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     4
+alpha:                 1.000
+r:                     4
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Selected:              21639
+Selected by group:     {1: 1101, 2: 17002, 3: 3177, 4: 359}
+Fairness ratio:        3.588
+Fraction of global OPT: 0.849
+Observed OPT / ALG ratio: 1.177
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     20196.88 (min: 9569, max: 25477)
+Mean selected by group:{1: 1110.225, 2: 15604.425, 3: 3115.158, 4: 367.073}
+Ex-ante fairness ratio:3.509 (min: 1.348, max: 3.509)
+Fraction of global OPT: 0.793 (min: 0.376, max: 1.000)
+Observed OPT / ALG ratio: 1.262 (min: 1.000, max: 2.663)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       18.941          1.000           1.000       
+Offline Deterministic   21639       3.588           0.849           1.177       
+Offline Randomized      20196.88    3.509           0.793           1.262       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     425.43 (min: 0, max: 8288)
+Mean selected by group:{1: 19.989, 2: 261.161, 3: 108.442, 4: 35.835}
+Ex-ante fairness ratio:80.571 (min: 35.943, max: 80.571)
+Fraction of global offline OPT: 0.017 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 59.890 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 91.615, 2: 1147.851, 3: 419.706, 4: 100.069}
+Ex-ante fairness ratio:18.332 (min: 12.871, max: 18.332)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm425.43      80.571          0.017           59.890      
+CRS                     1759.24     18.332          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_5groups.csv
+Intervals:             54034
+Groups (k):            5
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 45, 2: 18075, 3: 8165, 4: 3468, 5: 802}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 45, 2: 17866, 3: 6427, 4: 1136, 5: 5}
+Fairness ratio:        160.400
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     5
+alpha:                 1.000
+r:                     5
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Selected:              20699
+Selected by group:     {1: 40, 2: 13678, 3: 5496, 4: 1320, 5: 165}
+Fairness ratio:        4.861
+Fraction of global OPT: 0.812
+Observed OPT / ALG ratio: 1.231
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     19708.63 (min: 8089, max: 25479)
+Mean selected by group:{1: 31.299, 2: 12961.712, 3: 5118.991, 4: 1432.246, 5: 164.381}
+Ex-ante fairness ratio:4.879 (min: 1.394, max: 4.879)
+Fraction of global OPT: 0.774 (min: 0.317, max: 1.000)
+Observed OPT / ALG ratio: 1.293 (min: 1.000, max: 3.150)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       160.400         1.000           1.000       
+Offline Deterministic   20699       4.861           0.812           1.231       
+Offline Randomized      19708.63    4.879           0.774           1.293       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     327.77 (min: 0, max: 8288)
+Mean selected by group:{1: 0.513, 2: 164.261, 3: 80.276, 4: 70.925, 5: 11.8}
+Ex-ante fairness ratio:110.038 (min: 48.897, max: 110.038)
+Fraction of global offline OPT: 0.013 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 77.733 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 2.395, 2: 953.335, 3: 466.661, 4: 288.993, 5: 47.857}
+Ex-ante fairness ratio:18.960 (min: 12.000, max: 18.960)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm327.77      110.038         0.013           77.733      
+CRS                     1759.24     18.960          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_6groups.csv
+Intervals:             54034
+Groups (k):            6
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 44, 2: 12532, 3: 11010, 4: 4790, 5: 2367, 6: 601}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 44, 2: 12355, 3: 9960, 4: 2665, 5: 455, 6: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     6
+alpha:                 1.000
+r:                     6
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Selected:              20190
+Selected by group:     {1: 37, 2: 9492, 3: 7393, 4: 2484, 5: 684, 6: 100}
+Fairness ratio:        6.010
+Fraction of global OPT: 0.792
+Observed OPT / ALG ratio: 1.262
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     20301.84 (min: 9084, max: 25479)
+Mean selected by group:{1: 33.364, 2: 9191.21, 3: 7779.694, 4: 2479.68, 5: 728.944, 6: 88.948}
+Ex-ante fairness ratio:6.757 (min: 1.319, max: 6.757)
+Fraction of global OPT: 0.797 (min: 0.357, max: 1.000)
+Observed OPT / ALG ratio: 1.255 (min: 1.000, max: 2.805)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   20190       6.010           0.792           1.262       
+Offline Randomized      20301.84    6.757           0.797           1.255       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     264.53 (min: 0, max: 8288)
+Mean selected by group:{1: 0.407, 2: 101.471, 3: 75.516, 4: 44.116, 5: 36.332, 6: 6.688}
+Ex-ante fairness ratio:145.797 (min: 65.149, max: 145.797)
+Fraction of global offline OPT: 0.010 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 96.318 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 2.333, 2: 623.496, 3: 613.637, 4: 302.404, 5: 192.878, 6: 24.493}
+Ex-ante fairness ratio:24.538 (min: 12.272, max: 24.538)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm264.53      145.797         0.010           96.318      
+CRS                     1759.24     24.538          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_7groups.csv
+Intervals:             54034
+Groups (k):            7
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 44, 2: 7644, 3: 12232, 4: 6275, 5: 3556, 6: 1713, 7: 10}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 44, 2: 7488, 3: 11660, 4: 4730, 5: 1382, 6: 175, 7: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     7
+alpha:                 1.000
+r:                     7
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Selected:              22723
+Selected by group:     {1: 41, 2: 6384, 3: 10078, 4: 4260, 5: 1577, 6: 381, 7: 2}
+Fairness ratio:        5.000
+Fraction of global OPT: 0.892
+Observed OPT / ALG ratio: 1.121
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22419.27 (min: 10955, max: 25479)
+Mean selected by group:{1: 35.684, 2: 6235.317, 3: 9978.435, 4: 4250.838, 5: 1557.536, 6: 360.15, 7: 1.31}
+Ex-ante fairness ratio:7.634 (min: 1.226, max: 7.634)
+Fraction of global OPT: 0.880 (min: 0.430, max: 1.000)
+Observed OPT / ALG ratio: 1.136 (min: 1.000, max: 2.326)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22723       5.000           0.892           1.121       
+Offline Randomized      22419.27    7.634           0.880           1.136       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     245.41 (min: 0, max: 5615)
+Mean selected by group:{1: 0.352, 2: 58.05, 3: 85.831, 4: 42.919, 5: 35.248, 6: 22.92, 7: 0.092}
+Ex-ante fairness ratio:146.206 (min: 74.738, max: 146.206)
+Fraction of global offline OPT: 0.010 (min: 0.000, max: 0.220)
+Observed offline OPT / ALG ratio: 103.821 (min: 4.538, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 2.333, 2: 377.442, 3: 646.636, 4: 345.321, 5: 242.506, 6: 144.402, 7: 0.601}
+Ex-ante fairness ratio:20.252 (min: 11.863, max: 20.252)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm245.41      146.206         0.010           103.821     
+CRS                     1759.24     20.252          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_8groups.csv
+Intervals:             54034
+Groups (k):            8
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 44, 2: 1494, 3: 15218, 4: 7005, 5: 4169, 6: 2678, 7: 1288, 8: 8}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 44, 2: 1471, 3: 14955, 4: 5889, 5: 2346, 6: 706, 7: 68, 8: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     8
+alpha:                 1.000
+r:                     8
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Selected:              22789
+Selected by group:     {1: 38, 2: 1212, 3: 13113, 4: 5083, 5: 2259, 6: 868, 7: 215, 8: 1}
+Fairness ratio:        8.000
+Fraction of global OPT: 0.894
+Observed OPT / ALG ratio: 1.118
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22001.62 (min: 9569, max: 25479)
+Mean selected by group:{1: 36.888, 2: 1219.512, 3: 12444.271, 4: 5007.365, 5: 2208.297, 6: 871.977, 7: 212.283, 8: 1.024}
+Ex-ante fairness ratio:7.812 (min: 1.193, max: 7.812)
+Fraction of global OPT: 0.864 (min: 0.376, max: 1.000)
+Observed OPT / ALG ratio: 1.158 (min: 1.000, max: 2.663)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22789       8.000           0.894           1.118       
+Offline Randomized      22001.62    7.812           0.864           1.158       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     193.07 (min: 0, max: 8288)
+Mean selected by group:{1: 0.242, 2: 8.968, 3: 66.383, 4: 55.257, 5: 24.948, 6: 19.353, 7: 17.876, 8: 0.04}
+Ex-ante fairness ratio:229.245 (min: 72.052, max: 229.245)
+Fraction of global offline OPT: 0.008 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 131.970 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 2.333, 2: 89.282, 3: 791.273, 4: 356.578, 5: 238.386, 6: 181.32, 7: 99.657, 8: 0.412}
+Ex-ante fairness ratio:19.645 (min: 12.924, max: 19.645)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm193.07      229.245         0.008           131.970     
+CRS                     1759.24     19.645          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_delta_9groups.csv
+Intervals:             54034
+Groups (k):            9
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 43, 2: 2, 3: 12531, 4: 8686, 5: 4773, 6: 3171, 7: 2231, 8: 1010, 9: 6}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 43, 2: 2, 3: 12354, 4: 7871, 5: 3411, 6: 1343, 7: 425, 8: 30, 9: 0}
+Fairness ratio:        inf
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     9
+alpha:                 1.000
+r:                     9
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Selected:              22147
+Selected by group:     {1: 42, 2: 2, 3: 10253, 4: 6787, 5: 3009, 6: 1340, 7: 574, 8: 139, 9: 1}
+Fairness ratio:        7.266
+Fraction of global OPT: 0.869
+Observed OPT / ALG ratio: 1.150
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21675.51 (min: 8744, max: 25479)
+Mean selected by group:{1: 35.005, 2: 1.444, 3: 10052.449, 4: 6587.287, 5: 2958.541, 6: 1324.094, 7: 571.387, 8: 144.602, 9: 0.696}
+Ex-ante fairness ratio:8.621 (min: 1.228, max: 8.621)
+Fraction of global OPT: 0.851 (min: 0.343, max: 1.000)
+Observed OPT / ALG ratio: 1.175 (min: 1.000, max: 2.914)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       inf             1.000           1.000       
+Offline Deterministic   22147       7.266           0.869           1.150       
+Offline Randomized      21675.51    8.621           0.851           1.175       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     207.56 (min: 0, max: 8288)
+Mean selected by group:{1: 0.236, 2: 0.014, 3: 54.672, 4: 64.862, 5: 19.278, 6: 32.211, 7: 25.054, 8: 11.198, 9: 0.04}
+Ex-ante fairness ratio:247.588 (min: 89.048, max: 247.588)
+Fraction of global offline OPT: 0.008 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 122.752 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 2.283, 2: 0.112, 3: 623.434, 4: 466.83, 5: 257.272, 6: 191.939, 7: 146.395, 8: 70.69, 9: 0.286}
+Ex-ante fairness ratio:20.979 (min: 14.288, max: 20.979)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm207.56      247.588         0.008           122.752     
+CRS                     1759.24     20.979          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_10groups.csv
+Intervals:             54034
+Groups (k):            10
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 4854, 2: 4273, 3: 4700, 4: 4296, 5: 4156, 6: 3719, 7: 2877, 8: 2242, 9: 1864, 10: 1012}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 4745, 2: 4043, 3: 4394, 4: 3813, 5: 3427, 6: 2636, 7: 1460, 8: 677, 9: 254, 10: 30}
+Fairness ratio:        33.733
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     10
+alpha:                 1.000
+r:                     10
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Selected:              22851
+Selected by group:     {1: 4015, 2: 3463, 3: 3860, 4: 3448, 5: 3030, 6: 2366, 7: 1402, 8: 769, 9: 373, 10: 125}
+Fairness ratio:        8.096
+Fraction of global OPT: 0.897
+Observed OPT / ALG ratio: 1.115
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21850.89 (min: 8773, max: 25467)
+Mean selected by group:{1: 3877.162, 2: 3304.014, 3: 3666.248, 4: 3213.56, 5: 2884.595, 6: 2279.002, 7: 1352.291, 8: 750.167, 9: 402.338, 10: 121.515}
+Ex-ante fairness ratio:8.328 (min: 1.252, max: 8.328)
+Fraction of global OPT: 0.858 (min: 0.344, max: 1.000)
+Observed OPT / ALG ratio: 1.166 (min: 1.000, max: 2.904)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       33.733          1.000           1.000       
+Offline Deterministic   22851       8.096           0.897           1.115       
+Offline Randomized      21850.89    8.328           0.858           1.166       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     160.41 (min: 0, max: 4273)
+Mean selected by group:{1: 24.596, 2: 12.819, 3: 12.093, 4: 25.328, 5: 19.462, 6: 10.552, 7: 15.472, 8: 15.43, 9: 15.39, 10: 9.271}
+Ex-ante fairness ratio:388.655 (min: 109.158, max: 388.655)
+Fraction of global offline OPT: 0.006 (min: 0.000, max: 0.168)
+Observed offline OPT / ALG ratio: 158.834 (min: 5.963, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 258.214, 2: 177.289, 3: 239.709, 4: 234.25, 5: 193.046, 6: 198.682, 7: 144.343, 8: 138.391, 9: 104.2, 10: 71.117}
+Ex-ante fairness ratio:24.102 (min: 14.230, max: 24.102)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm160.41      388.655         0.006           158.834     
+CRS                     1759.24     24.102          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_2groups.csv
+Intervals:             54034
+Groups (k):            2
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 20569, 2: 7575}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 20422, 2: 5057}
+Fairness ratio:        1.498
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     2
+alpha:                 1.000
+r:                     2
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Selected:              23654
+Selected by group:     {1: 17410, 2: 6244}
+Fairness ratio:        1.213
+Fraction of global OPT: 0.928
+Observed OPT / ALG ratio: 1.077
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     23256.38 (min: 21028, max: 25467)
+Mean selected by group:{1: 17025.232, 2: 6231.146}
+Ex-ante fairness ratio:1.216 (min: 1.208, max: 1.216)
+Fraction of global OPT: 0.913 (min: 0.825, max: 1.000)
+Observed OPT / ALG ratio: 1.096 (min: 1.000, max: 1.212)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.498           1.000           1.000       
+Offline Deterministic   23654       1.213           0.928           1.077       
+Offline Randomized      23256.38    1.216           0.913           1.096       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     858.92 (min: 0, max: 8288)
+Mean selected by group:{1: 532.027, 2: 326.89}
+Ex-ante fairness ratio:38.662 (min: 23.173, max: 38.662)
+Fraction of global offline OPT: 0.034 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 29.664 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 1102.508, 2: 656.733}
+Ex-ante fairness ratio:18.657 (min: 11.534, max: 18.657)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm858.92      38.662          0.034           29.664      
+CRS                     1759.24     18.657          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_3groups.csv
+Intervals:             54034
+Groups (k):            3
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 14724, 2: 11098, 3: 3876}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 14501, 2: 9571, 3: 1407}
+Fairness ratio:        2.755
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     3
+alpha:                 1.000
+r:                     3
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Selected:              22447
+Selected by group:     {1: 11714, 2: 8558, 3: 2175}
+Fairness ratio:        1.782
+Fraction of global OPT: 0.881
+Observed OPT / ALG ratio: 1.135
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     22184.64 (min: 16242, max: 25449)
+Mean selected by group:{1: 11511.69, 2: 8502.41, 3: 2170.54}
+Ex-ante fairness ratio:1.786 (min: 1.279, max: 1.786)
+Fraction of global OPT: 0.871 (min: 0.637, max: 0.999)
+Observed OPT / ALG ratio: 1.148 (min: 1.001, max: 1.569)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       2.755           1.000           1.000       
+Offline Deterministic   22447       1.782           0.881           1.135       
+Offline Randomized      22184.64    1.786           0.871           1.148       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     567.40 (min: 0, max: 8288)
+Mean selected by group:{1: 245.224, 2: 196.75, 3: 125.425}
+Ex-ante fairness ratio:60.043 (min: 30.903, max: 60.043)
+Fraction of global offline OPT: 0.022 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 44.905 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 758.756, 2: 625.704, 3: 374.781}
+Ex-ante fairness ratio:19.405 (min: 10.342, max: 19.405)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm567.40      60.043          0.022           44.905      
+CRS                     1759.24     19.405          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_4groups.csv
+Intervals:             54034
+Groups (k):            4
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 11119, 2: 10286, 3: 6549, 4: 2585}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 10946, 2: 9476, 3: 4491, 4: 566}
+Fairness ratio:        4.567
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     4
+alpha:                 1.000
+r:                     4
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Selected:              22848
+Selected by group:     {1: 9198, 2: 8151, 3: 4476, 4: 1023}
+Fairness ratio:        2.527
+Fraction of global OPT: 0.897
+Observed OPT / ALG ratio: 1.115
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21864.52 (min: 13725, max: 25469)
+Mean selected by group:{1: 8605.246, 2: 7880.558, 3: 4325.151, 4: 1053.562}
+Ex-ante fairness ratio:2.454 (min: 1.292, max: 2.454)
+Fraction of global OPT: 0.858 (min: 0.539, max: 1.000)
+Observed OPT / ALG ratio: 1.165 (min: 1.000, max: 1.856)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       4.567           1.000           1.000       
+Offline Deterministic   22848       2.527           0.897           1.115       
+Offline Randomized      21864.52    2.454           0.858           1.165       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     429.49 (min: 0, max: 8288)
+Mean selected by group:{1: 121.359, 2: 134.298, 3: 100.322, 4: 73.506}
+Ex-ante fairness ratio:91.621 (min: 35.167, max: 91.621)
+Fraction of global offline OPT: 0.017 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 59.325 (min: 3.074, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 533.435, 2: 569.073, 3: 414.666, 4: 242.067}
+Ex-ante fairness ratio:20.844 (min: 10.679, max: 20.844)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm429.49      91.621          0.017           59.325      
+CRS                     1759.24     20.844          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_5groups.csv
+Intervals:             54034
+Groups (k):            5
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 8951, 2: 8731, 3: 7346, 4: 4357, 5: 2046}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 8788, 2: 8207, 3: 6063, 4: 2137, 5: 284}
+Fairness ratio:        7.204
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     5
+alpha:                 1.000
+r:                     5
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Selected:              22023
+Selected by group:     {1: 7053, 2: 6893, 3: 5174, 4: 2290, 5: 613}
+Fairness ratio:        3.338
+Fraction of global OPT: 0.864
+Observed OPT / ALG ratio: 1.157
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21640.25 (min: 11707, max: 25473)
+Mean selected by group:{1: 6914.103, 2: 6723.162, 3: 5103.518, 4: 2271.588, 5: 627.876}
+Ex-ante fairness ratio:3.259 (min: 1.295, max: 3.259)
+Fraction of global OPT: 0.849 (min: 0.459, max: 1.000)
+Observed OPT / ALG ratio: 1.177 (min: 1.000, max: 2.176)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       7.204           1.000           1.000       
+Offline Deterministic   22023       3.338           0.864           1.157       
+Offline Randomized      21640.25    3.259           0.849           1.177       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     294.20 (min: 0, max: 6110)
+Mean selected by group:{1: 81.37, 2: 70.621, 3: 53.066, 4: 53.014, 5: 36.126}
+Ex-ante fairness ratio:138.431 (min: 56.635, max: 138.431)
+Fraction of global offline OPT: 0.012 (min: 0.000, max: 0.240)
+Observed offline OPT / ALG ratio: 86.605 (min: 4.170, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 435.503, 2: 473.959, 3: 391.728, 4: 282.734, 5: 175.317}
+Ex-ante fairness ratio:20.553 (min: 11.670, max: 20.553)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm294.20      138.431         0.012           86.605      
+CRS                     1759.24     20.553          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_6groups.csv
+Intervals:             54034
+Groups (k):            6
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 7610, 2: 7459, 3: 6843, 4: 5177, 5: 3403, 6: 1658}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 7459, 2: 7042, 3: 5921, 4: 3650, 5: 1249, 6: 158}
+Fairness ratio:        10.494
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     6
+alpha:                 1.000
+r:                     6
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Selected:              23049
+Selected by group:     {1: 6326, 2: 6288, 3: 5260, 4: 3378, 5: 1406, 6: 391}
+Fairness ratio:        4.240
+Fraction of global OPT: 0.905
+Observed OPT / ALG ratio: 1.105
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21859.94 (min: 10645, max: 25470)
+Mean selected by group:{1: 5971.106, 2: 5796.736, 3: 4972.05, 4: 3272.084, 5: 1474.804, 6: 373.16}
+Ex-ante fairness ratio:4.443 (min: 1.274, max: 4.443)
+Fraction of global OPT: 0.858 (min: 0.418, max: 1.000)
+Observed OPT / ALG ratio: 1.166 (min: 1.000, max: 2.394)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       10.494          1.000           1.000       
+Offline Deterministic   23049       4.240           0.905           1.105       
+Offline Randomized      21859.94    4.443           0.858           1.166       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     274.12 (min: 0, max: 4751)
+Mean selected by group:{1: 67.503, 2: 53.767, 3: 47.632, 4: 42.174, 5: 37.689, 6: 25.356}
+Ex-ante fairness ratio:143.664 (min: 65.389, max: 143.664)
+Fraction of global offline OPT: 0.011 (min: 0.000, max: 0.186)
+Observed offline OPT / ALG ratio: 92.948 (min: 5.363, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 376.593, 2: 382.163, 3: 343.752, 4: 281.952, 5: 235.758, 6: 139.023}
+Ex-ante fairness ratio:20.207 (min: 11.926, max: 20.207)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm274.12      143.664         0.011           92.948      
+CRS                     1759.24     20.207          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_7groups.csv
+Intervals:             54034
+Groups (k):            7
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 6627, 2: 6363, 3: 6051, 4: 5485, 5: 4002, 6: 2656, 7: 1413}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 6489, 2: 6065, 3: 5458, 4: 4412, 5: 2230, 6: 734, 7: 91}
+Fairness ratio:        15.527
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     7
+alpha:                 1.000
+r:                     7
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Selected:              22818
+Selected by group:     {1: 5517, 2: 5287, 3: 4692, 4: 4009, 5: 2174, 6: 873, 7: 266}
+Fairness ratio:        5.312
+Fraction of global OPT: 0.896
+Observed OPT / ALG ratio: 1.117
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21948.79 (min: 9761, max: 25469)
+Mean selected by group:{1: 5276.923, 2: 4993.446, 3: 4605.703, 4: 3782.079, 5: 2139.486, 6: 891.358, 7: 259.793}
+Ex-ante fairness ratio:5.439 (min: 1.256, max: 5.439)
+Fraction of global OPT: 0.861 (min: 0.383, max: 1.000)
+Observed OPT / ALG ratio: 1.161 (min: 1.000, max: 2.610)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       15.527          1.000           1.000       
+Offline Deterministic   22818       5.312           0.896           1.117       
+Offline Randomized      21948.79    5.439           0.861           1.161       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     249.79 (min: 0, max: 4723)
+Mean selected by group:{1: 52.023, 2: 39.12, 3: 32.968, 4: 38.1, 5: 35.98, 6: 35.493, 7: 16.111}
+Ex-ante fairness ratio:183.542 (min: 74.832, max: 183.542)
+Fraction of global offline OPT: 0.010 (min: 0.000, max: 0.185)
+Observed offline OPT / ALG ratio: 102.000 (min: 5.395, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 334.195, 2: 301.074, 3: 325.578, 4: 283.559, 5: 225.865, 6: 178.42, 7: 110.55}
+Ex-ante fairness ratio:21.134 (min: 12.782, max: 21.134)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm249.79      183.542         0.010           102.000     
+CRS                     1759.24     21.134          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_8groups.csv
+Intervals:             54034
+Groups (k):            8
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 5911, 2: 5435, 3: 5576, 4: 5153, 5: 4342, 6: 3150, 7: 2321, 8: 1219}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 5780, 2: 5166, 3: 5115, 4: 4361, 5: 3081, 6: 1410, 7: 508, 8: 58}
+Fairness ratio:        21.017
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     8
+alpha:                 1.000
+r:                     8
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Selected:              22591
+Selected by group:     {1: 4809, 2: 4447, 3: 4533, 4: 3708, 5: 2799, 6: 1430, 7: 670, 8: 195}
+Fairness ratio:        6.251
+Fraction of global OPT: 0.887
+Observed OPT / ALG ratio: 1.128
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21675.64 (min: 9410, max: 25466)
+Mean selected by group:{1: 4647.557, 2: 4185.958, 3: 4274.828, 4: 3622.597, 5: 2674, 6: 1394.33, 7: 673.061, 8: 203.312}
+Ex-ante fairness ratio:5.996 (min: 1.272, max: 5.996)
+Fraction of global OPT: 0.851 (min: 0.369, max: 0.999)
+Observed OPT / ALG ratio: 1.175 (min: 1.001, max: 2.708)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       21.017          1.000           1.000       
+Offline Deterministic   22591       6.251           0.887           1.128       
+Offline Randomized      21675.64    5.996           0.851           1.175       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     227.47 (min: 0, max: 5576)
+Mean selected by group:{1: 38.81, 2: 21.77, 3: 27.88, 4: 39.852, 5: 19.37, 6: 36.267, 7: 26.746, 8: 16.77}
+Ex-ante fairness ratio:249.655 (min: 72.689, max: 249.655)
+Fraction of global offline OPT: 0.009 (min: 0.000, max: 0.219)
+Observed offline OPT / ALG ratio: 112.013 (min: 4.569, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 303.063, 2: 230.372, 3: 328.748, 4: 240.325, 5: 232.889, 6: 181.777, 7: 149.095, 8: 92.972}
+Ex-ante fairness ratio:23.592 (min: 13.111, max: 23.592)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm227.47      249.655         0.009           112.013     
+CRS                     1759.24     23.592          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_length_quantile_9groups.csv
+Intervals:             54034
+Groups (k):            9
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 5310, 2: 4766, 3: 5178, 4: 4743, 5: 4355, 6: 3403, 7: 2678, 8: 2107, 9: 1087}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 5196, 2: 4524, 3: 4781, 4: 4084, 5: 3410, 6: 2077, 7: 994, 8: 376, 9: 37}
+Fairness ratio:        29.378
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     9
+alpha:                 1.000
+r:                     9
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Selected:              22664
+Selected by group:     {1: 4370, 2: 3831, 3: 4319, 4: 3537, 5: 2953, 6: 1921, 7: 1063, 8: 522, 9: 148}
+Fairness ratio:        7.345
+Fraction of global OPT: 0.890
+Observed OPT / ALG ratio: 1.124
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     21657.85 (min: 9376, max: 25472)
+Mean selected by group:{1: 4198.485, 2: 3662.879, 3: 3963.446, 4: 3383.099, 5: 2883.872, 6: 1848.81, 7: 1016.53, 8: 544.55, 9: 156.175}
+Ex-ante fairness ratio:6.960 (min: 1.265, max: 6.960)
+Fraction of global OPT: 0.850 (min: 0.368, max: 1.000)
+Observed OPT / ALG ratio: 1.176 (min: 1.000, max: 2.717)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       29.378          1.000           1.000       
+Offline Deterministic   22664       7.345           0.890           1.124       
+Offline Randomized      21657.85    6.960           0.850           1.176       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     187.66 (min: 0, max: 4765)
+Mean selected by group:{1: 32.237, 2: 19.06, 3: 19.884, 4: 34.251, 5: 22.816, 6: 17.199, 7: 16.169, 8: 18.033, 9: 8.015}
+Ex-ante fairness ratio:260.410 (min: 116.841, max: 260.410)
+Fraction of global offline OPT: 0.007 (min: 0.000, max: 0.187)
+Observed offline OPT / ALG ratio: 135.769 (min: 5.347, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 277.779, 2: 199.477, 3: 281.5, 4: 231.159, 5: 221.731, 6: 172.814, 7: 168.218, 8: 125.717, 9: 80.846}
+Ex-ante fairness ratio:23.892 (min: 13.445, max: 23.892)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm187.66      260.410         0.007           135.769     
+CRS                     1759.24     23.892          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_10groups_seed42.csv
+Intervals:             54034
+Groups (k):            10
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 3928, 2: 3829, 3: 3865, 4: 3758, 5: 3850, 6: 3822, 7: 3972, 8: 3922, 9: 3807, 10: 3829}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 2606, 2: 2573, 3: 2580, 4: 2488, 5: 2554, 6: 2530, 7: 2591, 8: 2555, 9: 2481, 10: 2521}
+Fairness ratio:        1.535
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     10
+alpha:                 1.000
+r:                     10
+Offline fairness bound: 10.000
+Offline approx bound:  10.000
+Selected:              23763
+Selected by group:     {1: 2410, 2: 2364, 3: 2407, 4: 2304, 5: 2428, 6: 2375, 7: 2403, 8: 2403, 9: 2314, 10: 2355}
+Fairness ratio:        1.653
+Fraction of global OPT: 0.933
+Observed OPT / ALG ratio: 1.072
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     23936.56 (min: 23778, max: 24102)
+Mean selected by group:{1: 2458.39, 2: 2404.941, 3: 2411.414, 4: 2331.034, 5: 2391.502, 6: 2375.003, 7: 2447.203, 8: 2410.63, 9: 2349.156, 10: 2357.287}
+Ex-ante fairness ratio:1.627 (min: 1.592, max: 1.627)
+Fraction of global OPT: 0.939 (min: 0.933, max: 0.946)
+Observed OPT / ALG ratio: 1.064 (min: 1.057, max: 1.072)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.535           1.000           1.000       
+Offline Deterministic   23763       1.653           0.933           1.072       
+Offline Randomized      23936.56    1.627           0.939           1.064       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     241.49 (min: 0, max: 1009)
+Mean selected by group:{1: 23.327, 2: 21.123, 3: 23.092, 4: 22.587, 5: 22.731, 6: 23.478, 7: 26.01, 8: 27.954, 9: 22.649, 10: 28.535}
+Ex-ante fairness ratio:181.272 (min: 134.186, max: 181.272)
+Fraction of global offline OPT: 0.009 (min: 0.000, max: 0.040)
+Observed offline OPT / ALG ratio: 105.509 (min: 25.252, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 180.314, 2: 173.613, 3: 178.075, 4: 173.452, 5: 174.872, 6: 173.223, 7: 181.815, 8: 174.669, 9: 171.67, 10: 177.538}
+Ex-ante fairness ratio:22.454 (min: 21.567, max: 22.454)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm241.49      181.272         0.009           105.509     
+CRS                     1759.24     22.454          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_2groups_seed42.csv
+Intervals:             54034
+Groups (k):            2
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 14556, 2: 14709}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 12623, 2: 12856}
+Fairness ratio:        1.153
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     2
+alpha:                 1.000
+r:                     2
+Offline fairness bound: 2.000
+Offline approx bound:  2.000
+Selected:              24910
+Selected by group:     {1: 12398, 2: 12512}
+Fairness ratio:        1.176
+Fraction of global OPT: 0.978
+Observed OPT / ALG ratio: 1.023
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24897.45 (min: 24885, max: 24910)
+Mean selected by group:{1: 12387.21, 2: 12510.24}
+Ex-ante fairness ratio:1.176 (min: 1.175, max: 1.176)
+Fraction of global OPT: 0.977 (min: 0.977, max: 0.978)
+Observed OPT / ALG ratio: 1.023 (min: 1.023, max: 1.024)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.153           1.000           1.000       
+Offline Deterministic   24910       1.176           0.978           1.023       
+Offline Randomized      24897.45    1.176           0.977           1.023       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     988.08 (min: 0, max: 4380)
+Mean selected by group:{1: 481.057, 2: 507.023}
+Ex-ante fairness ratio:30.258 (min: 29.011, max: 30.258)
+Fraction of global offline OPT: 0.039 (min: 0.000, max: 0.172)
+Observed offline OPT / ALG ratio: 25.786 (min: 5.817, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 874.536, 2: 884.705}
+Ex-ante fairness ratio:16.644 (min: 16.626, max: 16.644)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm988.08      30.258          0.039           25.786      
+CRS                     1759.24     16.644          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_3groups_seed42.csv
+Intervals:             54034
+Groups (k):            3
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 10558, 2: 10513, 3: 10467}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 8571, 2: 8428, 3: 8480}
+Fairness ratio:        1.247
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     3
+alpha:                 1.000
+r:                     3
+Offline fairness bound: 3.000
+Offline approx bound:  3.000
+Selected:              24610
+Selected by group:     {1: 8158, 2: 8199, 3: 8253}
+Fairness ratio:        1.294
+Fraction of global OPT: 0.966
+Observed OPT / ALG ratio: 1.035
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24587.07 (min: 24543, max: 24630)
+Mean selected by group:{1: 8306.07, 2: 8162.24, 3: 8118.76}
+Ex-ante fairness ratio:1.289 (min: 1.271, max: 1.289)
+Fraction of global OPT: 0.965 (min: 0.963, max: 0.967)
+Observed OPT / ALG ratio: 1.036 (min: 1.034, max: 1.038)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.247           1.000           1.000       
+Offline Deterministic   24610       1.294           0.966           1.035       
+Offline Randomized      24587.07    1.289           0.965           1.036       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     698.60 (min: 0, max: 3016)
+Mean selected by group:{1: 224.846, 2: 238.651, 3: 235.099}
+Ex-ante fairness ratio:46.957 (min: 44.052, max: 46.957)
+Fraction of global offline OPT: 0.027 (min: 0.000, max: 0.118)
+Observed offline OPT / ALG ratio: 36.472 (min: 8.448, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 587.674, 2: 586.306, 3: 585.261}
+Ex-ante fairness ratio:17.966 (min: 17.884, max: 17.966)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm698.60      46.957          0.027           36.472      
+CRS                     1759.24     17.966          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_4groups_seed42.csv
+Intervals:             54034
+Groups (k):            4
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 8349, 2: 8198, 3: 8221, 4: 8475}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 6328, 2: 6295, 3: 6274, 4: 6582}
+Fairness ratio:        1.319
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     4
+alpha:                 1.000
+r:                     4
+Offline fairness bound: 4.000
+Offline approx bound:  4.000
+Selected:              24465
+Selected by group:     {1: 6059, 2: 6035, 3: 6024, 4: 6347}
+Fairness ratio:        1.378
+Fraction of global OPT: 0.960
+Observed OPT / ALG ratio: 1.041
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24431.91 (min: 24342, max: 24472)
+Mean selected by group:{1: 6135.431, 2: 6005.045, 3: 6023.885, 4: 6267.549}
+Ex-ante fairness ratio:1.365 (min: 1.352, max: 1.365)
+Fraction of global OPT: 0.959 (min: 0.955, max: 0.960)
+Observed OPT / ALG ratio: 1.043 (min: 1.041, max: 1.047)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.319           1.000           1.000       
+Offline Deterministic   24465       1.378           0.960           1.041       
+Offline Randomized      24431.91    1.365           0.959           1.043       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     548.91 (min: 0, max: 2305)
+Mean selected by group:{1: 139.868, 2: 126.859, 3: 125.84, 4: 156.348}
+Ex-ante fairness ratio:65.329 (min: 54.206, max: 65.329)
+Fraction of global offline OPT: 0.022 (min: 0.000, max: 0.090)
+Observed offline OPT / ALG ratio: 46.417 (min: 11.054, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 443.538, 2: 430.998, 3: 431.937, 4: 452.768}
+Ex-ante fairness ratio:19.033 (min: 18.718, max: 19.033)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm548.91      65.329          0.022           46.417      
+CRS                     1759.24     19.033          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_5groups_seed42.csv
+Intervals:             54034
+Groups (k):            5
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 6941, 2: 6850, 3: 6884, 4: 7046, 5: 6864}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 5179, 2: 5068, 3: 5084, 4: 5146, 5: 5002}
+Fairness ratio:        1.372
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     5
+alpha:                 1.000
+r:                     5
+Offline fairness bound: 5.000
+Offline approx bound:  5.000
+Selected:              24175
+Selected by group:     {1: 4793, 2: 4860, 3: 4803, 4: 4923, 5: 4796}
+Fairness ratio:        1.448
+Fraction of global OPT: 0.949
+Observed OPT / ALG ratio: 1.054
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24227.47 (min: 24098, max: 24385)
+Mean selected by group:{1: 4922.941, 2: 4791.864, 3: 4803.965, 4: 4930.579, 5: 4778.126}
+Ex-ante fairness ratio:1.437 (min: 1.410, max: 1.437)
+Fraction of global OPT: 0.951 (min: 0.946, max: 0.957)
+Observed OPT / ALG ratio: 1.052 (min: 1.045, max: 1.057)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.372           1.000           1.000       
+Offline Deterministic   24175       1.448           0.949           1.054       
+Offline Randomized      24227.47    1.437           0.951           1.052       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     449.03 (min: 0, max: 1937)
+Mean selected by group:{1: 82.648, 2: 85.105, 3: 86.15, 4: 99.797, 5: 95.328}
+Ex-ante fairness ratio:83.983 (min: 70.603, max: 83.983)
+Fraction of global offline OPT: 0.018 (min: 0.000, max: 0.076)
+Observed offline OPT / ALG ratio: 56.743 (min: 13.154, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 353.927, 2: 351.527, 3: 348.095, 4: 356.484, 5: 349.208}
+Ex-ante fairness ratio:19.776 (min: 19.486, max: 19.776)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm449.03      83.983          0.018           56.743      
+CRS                     1759.24     19.776          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_6groups_seed42.csv
+Intervals:             54034
+Groups (k):            6
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 5919, 2: 6029, 3: 5855, 4: 5987, 5: 5874, 6: 5967}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 4215, 2: 4356, 3: 4136, 4: 4292, 5: 4215, 6: 4265}
+Fairness ratio:        1.416
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     6
+alpha:                 1.000
+r:                     6
+Offline fairness bound: 6.000
+Offline approx bound:  6.000
+Selected:              24175
+Selected by group:     {1: 3967, 2: 4086, 3: 3939, 4: 4092, 5: 3936, 6: 4155}
+Fairness ratio:        1.492
+Fraction of global OPT: 0.949
+Observed OPT / ALG ratio: 1.054
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24136.48 (min: 24061, max: 24227)
+Mean selected by group:{1: 4025.056, 2: 4113.722, 3: 3922.734, 4: 4075.22, 5: 3996.88, 6: 4002.87}
+Ex-ante fairness ratio:1.493 (min: 1.466, max: 1.493)
+Fraction of global OPT: 0.947 (min: 0.944, max: 0.951)
+Observed OPT / ALG ratio: 1.056 (min: 1.052, max: 1.059)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.416           1.000           1.000       
+Offline Deterministic   24175       1.492           0.949           1.054       
+Offline Randomized      24136.48    1.493           0.947           1.056       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     382.31 (min: 0, max: 1604)
+Mean selected by group:{1: 59.599, 2: 63.04, 3: 63.115, 4: 67.601, 5: 65.562, 6: 63.39}
+Ex-ante fairness ratio:99.314 (min: 88.564, max: 99.314)
+Fraction of global offline OPT: 0.015 (min: 0.000, max: 0.063)
+Observed offline OPT / ALG ratio: 66.645 (min: 15.885, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 289.613, 2: 298.061, 3: 289.988, 4: 296.318, 5: 289.063, 6: 296.198}
+Ex-ante fairness ratio:20.438 (min: 20.145, max: 20.438)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm382.31      99.314          0.015           66.645      
+CRS                     1759.24     20.438          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_7groups_seed42.csv
+Intervals:             54034
+Groups (k):            7
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 5261, 2: 5222, 3: 5139, 4: 5264, 5: 5201, 6: 5227, 7: 5244}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 3668, 2: 3635, 3: 3495, 4: 3666, 5: 3635, 6: 3655, 7: 3725}
+Fairness ratio:        1.470
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     7
+alpha:                 1.000
+r:                     7
+Offline fairness bound: 7.000
+Offline approx bound:  7.000
+Selected:              24093
+Selected by group:     {1: 3438, 2: 3386, 3: 3393, 4: 3478, 5: 3427, 6: 3463, 7: 3508}
+Fairness ratio:        1.542
+Fraction of global OPT: 0.946
+Observed OPT / ALG ratio: 1.058
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24087.63 (min: 23990, max: 24207)
+Mean selected by group:{1: 3496.024, 2: 3442.543, 3: 3314.717, 4: 3496.199, 5: 3440.199, 6: 3426.503, 7: 3471.443}
+Ex-ante fairness ratio:1.550 (min: 1.505, max: 1.550)
+Fraction of global OPT: 0.945 (min: 0.942, max: 0.950)
+Observed OPT / ALG ratio: 1.058 (min: 1.053, max: 1.062)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.470           1.000           1.000       
+Offline Deterministic   24093       1.542           0.946           1.058       
+Offline Randomized      24087.63    1.550           0.945           1.058       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     334.45 (min: 0, max: 1405)
+Mean selected by group:{1: 43.302, 2: 49.157, 3: 43.148, 4: 48.151, 5: 52.411, 6: 49.86, 7: 48.422}
+Ex-ante fairness ratio:121.496 (min: 99.235, max: 121.496)
+Fraction of global offline OPT: 0.013 (min: 0.000, max: 0.055)
+Observed offline OPT / ALG ratio: 76.182 (min: 18.135, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 252.07, 2: 252.899, 3: 245.85, 4: 251.354, 5: 251.37, 6: 253.999, 7: 251.699}
+Ex-ante fairness ratio:20.943 (min: 20.579, max: 20.943)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm334.45      121.496         0.013           76.182      
+CRS                     1759.24     20.943          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_8groups_seed42.csv
+Intervals:             54034
+Groups (k):            8
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 4667, 2: 4669, 3: 4653, 4: 4565, 5: 4624, 6: 4641, 7: 4791, 8: 4703}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 3179, 2: 3149, 3: 3150, 4: 3145, 5: 3119, 6: 3155, 7: 3331, 8: 3251}
+Fairness ratio:        1.483
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     8
+alpha:                 1.000
+r:                     8
+Offline fairness bound: 8.000
+Offline approx bound:  8.000
+Selected:              24275
+Selected by group:     {1: 3000, 2: 3064, 3: 3032, 4: 2981, 5: 2974, 6: 3029, 7: 3121, 8: 3074}
+Fairness ratio:        1.556
+Fraction of global OPT: 0.953
+Observed OPT / ALG ratio: 1.050
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     24076.28 (min: 24005, max: 24199)
+Mean selected by group:{1: 3024.592, 2: 2997.535, 3: 2973.825, 4: 2952.741, 5: 2952.436, 6: 2981.437, 7: 3116.262, 8: 3077.448}
+Ex-ante fairness ratio:1.566 (min: 1.528, max: 1.566)
+Fraction of global OPT: 0.945 (min: 0.942, max: 0.950)
+Observed OPT / ALG ratio: 1.058 (min: 1.053, max: 1.061)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.483           1.000           1.000       
+Offline Deterministic   24275       1.556           0.953           1.050       
+Offline Randomized      24076.28    1.566           0.945           1.058       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     297.69 (min: 0, max: 1227)
+Mean selected by group:{1: 39.086, 2: 36.488, 3: 34.794, 4: 33.991, 5: 31.846, 6: 36.613, 7: 43.999, 8: 40.878}
+Ex-ante fairness ratio:145.199 (min: 108.889, max: 145.199)
+Fraction of global offline OPT: 0.012 (min: 0.000, max: 0.048)
+Observed offline OPT / ALG ratio: 85.588 (min: 20.765, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 223.122, 2: 220.416, 3: 216.745, 4: 214.253, 5: 213.662, 6: 218.275, 7: 227.803, 8: 224.965}
+Ex-ante fairness ratio:21.642 (min: 20.905, max: 21.642)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm297.69      145.199         0.012           85.588      
+CRS                     1759.24     21.642          0.069           14.483      
+
+================================================================================
+
+INSTANCE INFORMATION
+Input file:            C:\Users\zwhsh\OneDrive\Desktop\Fair\interval-fairness\temp\generated_intervals\SDSC-SP2-1998\SDSC-SP2-1998-4.2-cln_interval_uniform_9groups_seed42.csv
+Intervals:             54034
+Groups (k):            9
+Minimum length:        1
+Maximum length:        510209
+Delta:                 510209.000
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Length levels:         19
+Global offline OPT:    25479
+OPT by group:          {1: 4299, 2: 4262, 3: 4188, 4: 4146, 5: 4128, 6: 4224, 7: 4397, 8: 4283, 9: 4110}
+
+==================================================
+OFFLINE ALGORITHMS
+==================================================
+
+Offline Greedy / Global OPT
+Selected:              25479
+Selected by group:     {1: 2924, 2: 2837, 3: 2755, 4: 2799, 5: 2727, 6: 2825, 7: 2970, 8: 2894, 9: 2748}
+Fairness ratio:        1.520
+Fraction of global OPT:      1.000
+OPT / ALG:         1.000
+
+Offline Deterministic
+k:                     9
+alpha:                 1.000
+r:                     9
+Offline fairness bound: 9.000
+Offline approx bound:  9.000
+Selected:              23914
+Selected by group:     {1: 2720, 2: 2704, 3: 2648, 4: 2620, 5: 2519, 6: 2629, 7: 2795, 8: 2718, 9: 2561}
+Fairness ratio:        1.639
+Fraction of global OPT: 0.939
+Observed OPT / ALG ratio: 1.065
+
+Offline Randomized
+Runs:                  1000
+Expected selected:     23979.32 (min: 23834, max: 24081)
+Mean selected by group:{1: 2749.523, 2: 2668.722, 3: 2608.697, 4: 2621.609, 5: 2559.408, 6: 2658.861, 7: 2796.132, 8: 2731.407, 9: 2584.965}
+Ex-ante fairness ratio:1.613 (min: 1.564, max: 1.613)
+Fraction of global OPT: 0.941 (min: 0.935, max: 0.945)
+Observed OPT / ALG ratio: 1.063 (min: 1.058, max: 1.069)
+
+OFFLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction OPT    OPT / ALG   
+Offline Greedy          25479       1.520           1.000           1.000       
+Offline Deterministic   23914       1.639           0.939           1.065       
+Offline Randomized      23979.32    1.613           0.941           1.063       
+
+==================================================
+ONLINE ALGORITHMS
+==================================================
+
+Online Randomized Fair Algorithm
+Runs:                  1000
+Length levels:         19
+Expected selected:     266.48 (min: 0, max: 1098)
+Mean selected by group:{1: 29.62, 2: 28.171, 3: 28.576, 4: 27.411, 5: 27.27, 6: 28.996, 7: 35.984, 8: 33.181, 9: 27.271}
+Ex-ante fairness ratio:151.375 (min: 122.193, max: 151.375)
+Fraction of global offline OPT: 0.010 (min: 0.000, max: 0.043)
+Observed offline OPT / ALG ratio: 95.613 (min: 23.205, max: inf)
+
+CRS
+Runs:                  1000
+Length levels:         19
+Expected selected:     1759.24 (min: 1, max: 8288)
+Mean selected by group:{1: 195.751, 2: 195.529, 3: 196.11, 4: 192.111, 5: 192.103, 6: 195.556, 7: 205.601, 8: 196.06, 9: 190.42}
+Ex-ante fairness ratio:21.962 (min: 21.355, max: 21.962)
+Fraction of global offline OPT: 0.069 (min: 0.000, max: 0.325)
+Observed offline OPT / ALG ratio: 14.483 (min: 3.074, max: 25479.000)
+
+ONLINE COMPARISON
+Algorithm               Selected    Fairness Ratio  Fraction Offline OPT  Offline OPT / ALG 
+Online Randomized Fair Algorithm266.48      151.375         0.010           95.613      
+CRS                     1759.24     21.962          0.069           14.483      
+
+Saved experiment results to: parallel_runs\20260715_152857\results\SDSC-SP2-1998-results.csv

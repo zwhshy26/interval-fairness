@@ -1,3 +1,4 @@
+import argparse
 import math
 import random
 from pathlib import Path
@@ -39,8 +40,10 @@ RANDOM_ASSIGNMENT_METHODS = [
     "exponential",
 ]
 
-SEEDS = [42]
-K_VALUES = range(2, 11)
+DEFAULT_START_SEED = 42
+DEFAULT_NUM_SEEDS = 1
+DEFAULT_K_MIN = 2
+DEFAULT_K_MAX = 10
 OUTPUT_FOLDER_NAME = "generated_intervals"
 
 
@@ -206,20 +209,96 @@ def convert_one_file(
     print(interval_df["group_id"].value_counts().sort_index())
 
 
-def main():
+def parse_seed_list(raw_value: str) -> list[int]:
+    seeds = [
+        int(part.strip())
+        for part in raw_value.split(",")
+        if part.strip()
+    ]
+    if not seeds:
+        raise ValueError("--seeds must contain at least one integer")
+    return seeds
+
+
+def parse_args() -> argparse.Namespace:
     project_folder = Path(__file__).resolve().parent
 
-    input_folder = project_folder
-    output_folder = project_folder / OUTPUT_FOLDER_NAME
+    parser = argparse.ArgumentParser(
+        description="Convert SWF workloads into interval CSV files."
+    )
+    parser.add_argument(
+        "--input-folder",
+        type=Path,
+        default=project_folder,
+        help="Folder containing .swf.gz workload files.",
+    )
+    parser.add_argument(
+        "--output-folder",
+        type=Path,
+        default=project_folder / OUTPUT_FOLDER_NAME,
+        help="Folder where generated interval CSV files are written.",
+    )
+    parser.add_argument(
+        "--start-seed",
+        type=int,
+        default=DEFAULT_START_SEED,
+        help="First seed to use when generating a consecutive seed range.",
+    )
+    parser.add_argument(
+        "--num-seeds",
+        type=int,
+        default=DEFAULT_NUM_SEEDS,
+        help="Number of consecutive seeds to use, starting from --start-seed.",
+    )
+    parser.add_argument(
+        "--seeds",
+        type=str,
+        help="Optional comma-separated seed list. Overrides --start-seed/--num-seeds.",
+    )
+    parser.add_argument(
+        "--k-min",
+        type=int,
+        default=DEFAULT_K_MIN,
+        help="Smallest number of groups to generate.",
+    )
+    parser.add_argument(
+        "--k-max",
+        type=int,
+        default=DEFAULT_K_MAX,
+        help="Largest number of groups to generate.",
+    )
+    return parser.parse_args()
+
+
+def build_seed_list(args: argparse.Namespace) -> list[int]:
+    if args.seeds is not None:
+        return parse_seed_list(args.seeds)
+
+    if args.num_seeds <= 0:
+        raise ValueError("--num-seeds must be positive")
+
+    return list(range(args.start_seed, args.start_seed + args.num_seeds))
+
+
+def main():
+    args = parse_args()
+
+    input_folder = args.input_folder
+    output_folder = args.output_folder
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    files = list(input_folder.glob("*.swf.gz"))
+    if args.k_min <= 0 or args.k_max < args.k_min:
+        raise ValueError("--k-min must be positive and --k-max must be >= --k-min")
+
+    seeds = build_seed_list(args)
+    k_values = range(args.k_min, args.k_max + 1)
+    files = sorted(input_folder.glob("*.swf.gz"))
 
     print("Input folder:", input_folder)
     print("Output folder:", output_folder)
     print("Number of .swf.gz files found:", len(files))
-    print("K values:", list(K_VALUES))
-    print("Random seeds:", SEEDS)
+    print("K values:", list(k_values))
+    print("Random seeds:", seeds)
     print("Random assignment methods:", RANDOM_ASSIGNMENT_METHODS)
 
     if len(files) == 0:
@@ -230,14 +309,14 @@ def main():
         workload_output_folder = output_folder / workload_folder_name(file_path)
         workload_output_folder.mkdir(parents=True, exist_ok=True)
 
-        for num_groups in K_VALUES:
+        for num_groups in k_values:
             for assignment_method in ASSIGNMENT_METHODS:
-                seeds = (
-                    SEEDS
+                seeds_to_use = (
+                    seeds
                     if assignment_method in RANDOM_ASSIGNMENT_METHODS
                     else [None]
                 )
-                for seed in seeds:
+                for seed in seeds_to_use:
                     convert_one_file(
                         file_path,
                         workload_output_folder,
