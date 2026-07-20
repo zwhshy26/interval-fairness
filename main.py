@@ -603,6 +603,152 @@ def run_offline_deterministic_r_block(
 # OFFLINE RANDOMIZED
 
 
+def precompute_group_greedy_statistics(
+    intervals: list[Interval],
+) -> dict[int, tuple[int, dict[int, int]]]:
+    """Precompute the group-only schedule used by the randomized baseline."""
+    groups = get_groups(intervals)
+    intervals_by_group = {
+        group: [interval for interval in intervals if interval.group == group]
+        for group in groups
+    }
+    statistics: dict[int, tuple[int, dict[int, int]]] = {}
+    for group in groups:
+        group_solution = run_offline_greedy(intervals_by_group[group])
+        statistics[group] = (
+            len(group_solution),
+            {candidate_group: len(group_solution) if candidate_group == group else 0
+             for candidate_group in groups},
+        )
+    return statistics
+
+
+def precompute_offline_randomized_statistics(
+    intervals: list[Interval],
+) -> dict[int, tuple[int, dict[int, int]]]:
+    """Precompute A_g and its statistics for every possible first group."""
+    groups = get_groups(intervals)
+    intervals_by_group = {
+        group: [interval for interval in intervals if interval.group == group]
+        for group in groups
+    }
+    statistics: dict[int, tuple[int, dict[int, int]]] = {}
+    for group in groups:
+        group_solution = run_offline_greedy(intervals_by_group[group])
+        residual_intervals = compatible_residual_intervals(intervals, group_solution)
+        residual_solution = run_offline_greedy(residual_intervals)
+        solution = group_solution + residual_solution
+        statistics[group] = (
+            len(solution),
+            fill_group_counts(count_by_group(solution), groups),
+        )
+    return statistics
+
+
+def _run_precomputed_offline_randomized(
+    statistics: dict[int, tuple[int, dict[int, int]]],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+    runs: int,
+    seed: int,
+    label: str,
+    show_progress: bool,
+    debug_runs: bool,
+) -> dict:
+    if runs <= 0:
+        raise ValueError(f"runs must be positive. Got runs={runs}")
+
+    groups = sorted(statistics)
+    if not groups:
+        raise ValueError("The randomized algorithm requires at least one group")
+
+    accumulated_total = 0
+    accumulated_by_group = {group: 0 for group in groups}
+    accumulated_fairness = 0.0
+    min_selected = math.inf
+    max_selected = -math.inf
+    chosen_groups: list[int] = []
+    progress = ProgressBar(runs, label, enabled=show_progress)
+
+    for run_index in range(runs):
+        chosen_group = random.Random(seed + run_index).choice(groups)
+        selected, stored_counts = statistics[chosen_group]
+        accumulated_total += selected
+        for group in groups:
+            accumulated_by_group[group] += stored_counts[group]
+        run_fairness = deterministic_fairness(stored_counts, opt_by_group)
+        accumulated_fairness += run_fairness
+        min_selected = min(min_selected, selected)
+        max_selected = max(max_selected, selected)
+        chosen_groups.append(chosen_group)
+        if debug_runs:
+            print(
+                f"{label} run {run_index + 1}: "
+                f"group={chosen_group}, selected={selected}"
+            )
+        progress.advance()
+
+    progress.finish()
+    empirical_total = accumulated_total / runs
+    mean_by_group = {
+        group: accumulated_by_group[group] / runs
+        for group in groups
+    }
+    fairness = ex_ante_fairness(mean_by_group, opt_by_group)
+    min_fairness, max_fairness = ex_ante_fairness_min_max(
+        mean_by_group,
+        opt_by_group,
+    )
+
+    # Uniform selection makes this exact expectation available from the cache;
+    # use it (not the mean of per-run ratios) for the approximation ratio.
+    expected_total = mean(selected for selected, _ in statistics.values())
+    inverse_ratio = safe_inverse_ratio(global_opt, expected_total)
+    metric_ranges = {
+        "selected": (empirical_total, min_selected, max_selected),
+        "fairness": (fairness, min_fairness, max_fairness),
+        "fraction_opt": (
+            safe_fraction(empirical_total, global_opt),
+            safe_fraction(min_selected, global_opt),
+            safe_fraction(max_selected, global_opt),
+        ),
+        "inverse_ratio": (
+            inverse_ratio,
+            safe_inverse_ratio(global_opt, max_selected),
+            safe_inverse_ratio(global_opt, min_selected),
+        ),
+    }
+    return {
+        "runs": runs,
+        "expected_total": empirical_total,
+        "exact_expected_total": expected_total,
+        "mean_by_group": mean_by_group,
+        "fairness": fairness,
+        "run_level_mean_fairness": accumulated_fairness / runs,
+        "fraction_opt": safe_fraction(empirical_total, global_opt),
+        "inverse_ratio": inverse_ratio,
+        "metric_ranges": metric_ranges,
+        "chosen_groups": chosen_groups,
+        "precomputed_statistics": statistics,
+    }
+
+
+def run_offline_randomized_baseline_multiple_times(
+    intervals: list[Interval],
+    opt_by_group: dict[int, int],
+    global_opt: int,
+    runs: int,
+    seed: int,
+    show_progress: bool = True,
+    debug_runs: bool = False,
+) -> dict:
+    statistics = precompute_group_greedy_statistics(intervals)
+    return _run_precomputed_offline_randomized(
+        statistics, opt_by_group, global_opt, runs, seed,
+        "Offline randomized baseline", show_progress, debug_runs,
+    )
+
+
 def run_offline_randomized_group_greedy(
     intervals: list[Interval],
     seed: int | None = None,
@@ -634,53 +780,123 @@ def run_offline_randomized_multiple_times(
     show_progress: bool = True,
     debug_runs: bool = False,
 ) -> dict:
-    run_counts: list[dict[int, int]] = []
-    chosen_groups: list[int] = []
+    if runs <= 0:
+        raise ValueError(f"runs must be positive. Got runs={runs}")
+
+    groups = get_groups(intervals)
+    if not groups:
+        raise ValueError("The randomized algorithm requires at least one group")
+
+    # Construct every possible schedule once, before any randomized run.
+    global_solution = run_offline_greedy(intervals)
+    global_opt = len(global_solution)
+    global_counts = fill_group_counts(count_by_group(global_solution), groups)
+    protected_statistics = precompute_offline_randomized_statistics(intervals)
+
+    relative_global_counts = {
+        group: (
+            global_counts[group] / opt_by_group[group]
+            if opt_by_group.get(group, 0) > 0
+            else 1.0
+        )
+        for group in groups
+    }
+    k = len(groups)
+    probability_global = sum(relative_global_counts.values()) / k
+    probability_by_group = {
+        group: (1.0 - relative_global_counts[group]) / k
+        for group in groups
+    }
+
+    accumulated_total = 0
+    accumulated_by_group = {group: 0 for group in groups}
+    min_selected = math.inf
+    max_selected = -math.inf
+    candidate_frequencies = {"O": 0, **{f"A_{group}": 0 for group in groups}}
     progress = ProgressBar(runs, "Offline randomized", enabled=show_progress)
 
     for run_index in range(runs):
-        solution, chosen_group = run_offline_randomized_group_greedy(
-            intervals,
-            seed=seed + run_index,
-        )
-        counts = count_by_group(solution)
-        chosen_groups.append(chosen_group)
-        run_counts.append(counts)
+        draw = random.Random(seed + run_index).random()
+        cumulative_probability = probability_global
+        if draw < cumulative_probability:
+            candidate_name = "O"
+            selected = global_opt
+            stored_counts = global_counts
+        else:
+            # Floating-point rounding can leave the cumulative sum just below
+            # one, so the final group is also the deterministic fallback.
+            chosen_group = groups[-1]
+            for group in groups:
+                cumulative_probability += probability_by_group[group]
+                if draw < cumulative_probability:
+                    chosen_group = group
+                    break
+            candidate_name = f"A_{chosen_group}"
+            selected, stored_counts = protected_statistics[chosen_group]
+
+        accumulated_total += selected
+        for group in groups:
+            accumulated_by_group[group] += stored_counts[group]
+        min_selected = min(min_selected, selected)
+        max_selected = max(max_selected, selected)
+        candidate_frequencies[candidate_name] += 1
         if debug_runs:
             print(
                 f"Offline randomized run {run_index + 1}: "
-                f"group={chosen_group}, selected={len(solution)}"
+                f"candidate={candidate_name}, selected={selected}"
             )
         progress.advance()
 
     progress.finish()
-    mean_by_group = mean_counts_by_group(run_counts, opt_by_group.keys())
-    metric_ranges = randomized_metric_ranges(run_counts, opt_by_group, global_opt)
-    expected_total = metric_mean(metric_ranges, "selected")
-    run_level_mean_fairness = metric_mean(metric_ranges, "fairness")
+    empirical_total = accumulated_total / runs
+    mean_by_group = {
+        group: accumulated_by_group[group] / runs
+        for group in groups
+    }
     fairness = ex_ante_fairness(mean_by_group, opt_by_group)
     min_fairness, max_fairness = ex_ante_fairness_min_max(
         mean_by_group,
         opt_by_group,
     )
-    inverse_ratio = safe_inverse_ratio(global_opt, expected_total)
-    _, min_selected, max_selected = metric_ranges["selected"]
-    metric_ranges["fairness"] = (fairness, min_fairness, max_fairness)
-    metric_ranges["inverse_ratio"] = (
-        inverse_ratio,
-        safe_inverse_ratio(global_opt, max_selected),
-        safe_inverse_ratio(global_opt, min_selected),
+    inverse_ratio = safe_inverse_ratio(global_opt, empirical_total)
+    fraction_opt = safe_fraction(empirical_total, global_opt)
+    metric_ranges = {
+        "selected": (empirical_total, min_selected, max_selected),
+        "fairness": (fairness, min_fairness, max_fairness),
+        "fraction_opt": (
+            fraction_opt,
+            safe_fraction(min_selected, global_opt),
+            safe_fraction(max_selected, global_opt),
+        ),
+        "inverse_ratio": (
+            inverse_ratio,
+            safe_inverse_ratio(global_opt, max_selected),
+            safe_inverse_ratio(global_opt, min_selected),
+        ),
+    }
+    exact_expected_total = (
+        probability_global * global_opt
+        + sum(
+            probability_by_group[group] * protected_statistics[group][0]
+            for group in groups
+        )
     )
     return {
         "runs": runs,
-        "expected_total": expected_total,
+        "expected_total": empirical_total,
+        "exact_expected_total": exact_expected_total,
         "mean_by_group": mean_by_group,
         "fairness": fairness,
-        "run_level_mean_fairness": run_level_mean_fairness,
-        "fraction_opt": metric_mean(metric_ranges, "fraction_opt"),
+        "fraction_opt": fraction_opt,
         "inverse_ratio": inverse_ratio,
         "metric_ranges": metric_ranges,
-        "chosen_groups": chosen_groups,
+        "candidate_frequencies": candidate_frequencies,
+        "selection_probabilities": {
+            "O": probability_global,
+            **{f"A_{group}": probability_by_group[group] for group in groups},
+        },
+        "global_statistics": (global_opt, global_counts),
+        "precomputed_statistics": protected_statistics,
     }
 
 
@@ -1597,6 +1813,42 @@ def evaluate_workload(
         )
     )
 
+    offline_randomized_baseline = run_offline_randomized_baseline_multiple_times(
+        intervals,
+        opt_by_group=opt_by_group,
+        global_opt=global_opt,
+        runs=runs,
+        seed=seed,
+        show_progress=show_progress,
+        debug_runs=debug_runs,
+    )
+    print("\nOffline Randomized Baseline")
+    print_randomized_summary(
+        offline_randomized_baseline,
+        fraction_label="Fraction of global OPT",
+        ratio_label="OPT / expected ALG ratio",
+    )
+    results.append(
+        build_result_row(
+            input_file=input_file,
+            k=k,
+            alpha=None,
+            r=None,
+            algorithm="offline_randomized_baseline",
+            algorithm_type="randomized",
+            runs=offline_randomized_baseline["runs"],
+            selected=offline_randomized_baseline["expected_total"],
+            fairness=offline_randomized_baseline["fairness"],
+            fraction_opt=offline_randomized_baseline["fraction_opt"],
+            inverse_ratio=offline_randomized_baseline["inverse_ratio"],
+            delta=delta,
+            opt_by_group=opt_by_group,
+            selected_by_group=offline_randomized_baseline["mean_by_group"],
+            num_levels=None,
+            metric_ranges=offline_randomized_baseline["metric_ranges"],
+        )
+    )
+
     offline_randomized = run_offline_randomized_multiple_times(
         intervals,
         opt_by_group=opt_by_group,
@@ -1610,7 +1862,7 @@ def evaluate_workload(
     print_randomized_summary(
         offline_randomized,
         fraction_label="Fraction of global OPT",
-        ratio_label="Observed OPT / ALG ratio",
+        ratio_label="OPT / expected ALG ratio",
     )
     results.append(
         build_result_row(
@@ -1638,6 +1890,7 @@ def evaluate_workload(
         [
             ("Offline Greedy", len(global_opt_solution), offline_greedy_fairness, 1.0 if global_opt > 0 else 0.0, 1.0 if global_opt > 0 else math.inf),
             ("Offline Deterministic", len(deterministic_solution), deterministic_fair, deterministic_fraction, deterministic_ratio),
+            ("Offline Randomized Baseline", offline_randomized_baseline["expected_total"], offline_randomized_baseline["fairness"], offline_randomized_baseline["fraction_opt"], offline_randomized_baseline["inverse_ratio"]),
             ("Offline Randomized", offline_randomized["expected_total"], offline_randomized["fairness"], offline_randomized["fraction_opt"], offline_randomized["inverse_ratio"]),
         ],
     )
